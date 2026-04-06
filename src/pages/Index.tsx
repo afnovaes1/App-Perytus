@@ -2,8 +2,9 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { FileText, Plus, Search } from 'lucide-react'
+import { FileText, LogOut, Plus, Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import { useAuth } from '@/hooks/use-auth'
 
 const mockReports = [
   { id: 'LD-2023-001', client: 'Condomínio Villa Verde', date: '10/10/2023', status: 'Concluído' },
@@ -12,6 +13,12 @@ const mockReports = [
 
 export default function Index() {
   const navigate = useNavigate()
+  const { signOut } = useAuth()
+
+  const handleLogout = () => {
+    signOut()
+    navigate('/login')
+  }
 
   return (
     <div className="container mx-auto py-12 max-w-5xl">
@@ -22,14 +29,20 @@ export default function Index() {
             Gerencie e crie novos documentos técnicos de engenharia.
           </p>
         </div>
-        <Button
-          size="lg"
-          className="gap-2 shadow-elevation"
-          onClick={() => navigate('/laudo/novo/identificacao')}
-        >
-          <Plus className="h-5 w-5" />
-          Novo Laudo
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="lg" className="gap-2" onClick={handleLogout}>
+            <LogOut className="h-5 w-5" />
+            Sair
+          </Button>
+          <Button
+            size="lg"
+            className="gap-2 shadow-elevation"
+            onClick={() => navigate('/laudo/novo/identificacao')}
+          >
+            <Plus className="h-5 w-5" />
+            Novo Laudo
+          </Button>
+        </div>
       </div>
 
       <Card className="border-border shadow-sm">
