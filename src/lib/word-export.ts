@@ -8,6 +8,7 @@ const sanitize = (value: any): string => {
     return value.length > 0 ? value.map((v) => sanitize(v)).join(', ') : 'Não informado.'
   }
   return String(value)
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -16,21 +17,32 @@ const sanitize = (value: any): string => {
     .replace(/\n/g, '<br/>')
 }
 
-const safeNum = (val: any): number => {
+const parseNum = (val: any): number => {
   const n = Number(val)
   return isNaN(n) ? 0 : n
 }
 
-export const validateForExport = (report: ReportRecord | { data: any }): boolean => {
+const displayNum = (val: any): string | number => {
+  if (val === null || val === undefined || val === '') return '-'
+  const n = Number(val)
+  return isNaN(n) ? '-' : n
+}
+
+export const validateForExport = (
+  report: ReportRecord | { data: any },
+  silent = false,
+): boolean => {
   const data = report.data || {}
   const classificacao = data.classificacao || {}
 
   if (!classificacao.tipo) {
-    toast.error('Classificação Pendente', {
-      description:
-        'Por favor, defina a Classificação do Documento na aba 12. Classificação antes de exportar.',
-      duration: 5000,
-    })
+    if (!silent) {
+      toast.error('Classificação Pendente', {
+        description:
+          'Por favor, defina a Classificação do Documento na aba 12. Classificação antes de exportar.',
+        duration: 5000,
+      })
+    }
     return false
   }
   return true
@@ -57,11 +69,11 @@ export const exportToWord = (
     const anexos = data.anexos || {}
 
     const effortTotal =
-      safeNum(estimativa.compreensao) +
-      safeNum(estimativa.estudo) +
-      safeNum(estimativa.organizacao) +
-      safeNum(estimativa.tratamento) +
-      safeNum(estimativa.consolidacao)
+      parseNum(estimativa.compreensao) +
+      parseNum(estimativa.estudo) +
+      parseNum(estimativa.organizacao) +
+      parseNum(estimativa.tratamento) +
+      parseNum(estimativa.consolidacao)
 
     const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office"
       xmlns:w="urn:schemas-microsoft-com:office:word"
@@ -123,16 +135,20 @@ export const exportToWord = (
             manifestacoes.length > 0
               ? manifestacoes
                   .map((m: any) => {
-                    const g = safeNum(m.gravidade) || 1
-                    const u = safeNum(m.urgencia) || 1
-                    const t = safeNum(m.tendencia) || 1
+                    const g =
+                      m.gravidade === '' || m.gravidade === undefined ? null : parseNum(m.gravidade)
+                    const u =
+                      m.urgencia === '' || m.urgencia === undefined ? null : parseNum(m.urgencia)
+                    const t =
+                      m.tendencia === '' || m.tendencia === undefined ? null : parseNum(m.tendencia)
+                    const result = g !== null && u !== null && t !== null ? g * u * t : '-'
                     return `
                     <tr>
                       <td>${sanitize(m.titulo || 'Sem título')}</td>
-                      <td>${g}</td>
-                      <td>${u}</td>
-                      <td>${t}</td>
-                      <td><strong>${g * u * t}</strong></td>
+                      <td>${displayNum(m.gravidade)}</td>
+                      <td>${displayNum(m.urgencia)}</td>
+                      <td>${displayNum(m.tendencia)}</td>
+                      <td><strong>${result}</strong></td>
                     </tr>
                   `
                   })
@@ -154,11 +170,11 @@ export const exportToWord = (
           </tr>
         </thead>
         <tbody>
-          <tr><td>Compreensão do Problema</td><td>${safeNum(estimativa.compreensao)}</td></tr>
-          <tr><td>Estudo e Pesquisa</td><td>${safeNum(estimativa.estudo)}</td></tr>
-          <tr><td>Organização de Dados</td><td>${safeNum(estimativa.organizacao)}</td></tr>
-          <tr><td>Tratamento de Imagens</td><td>${safeNum(estimativa.tratamento)}</td></tr>
-          <tr><td>Consolidação / Redação</td><td>${safeNum(estimativa.consolidacao)}</td></tr>
+          <tr><td>Compreensão do Problema</td><td>${displayNum(estimativa.compreensao)}</td></tr>
+          <tr><td>Estudo e Pesquisa</td><td>${displayNum(estimativa.estudo)}</td></tr>
+          <tr><td>Organização de Dados</td><td>${displayNum(estimativa.organizacao)}</td></tr>
+          <tr><td>Tratamento de Imagens</td><td>${displayNum(estimativa.tratamento)}</td></tr>
+          <tr><td>Consolidação / Redação</td><td>${displayNum(estimativa.consolidacao)}</td></tr>
           <tr>
             <th style="background-color: #d9e1f2;">Total de Esforço</th>
             <th style="background-color: #d9e1f2;">${effortTotal} horas</th>
@@ -258,10 +274,10 @@ export const exportToWord = (
     const safeTitle = (report.title || 'Laudo_Tecnico').replace(/[^a-z0-9]/gi, '_').toLowerCase()
     const dateStr = format(new Date(), 'yyyy-MM-dd')
 
-    // To strictly avoid Word recovery prompts on HTML files (Acceptance Criteria "No Manual Recovery"),
-    // the .doc extension is the standard for Office HTML exports.
-    // However, conforming to the Naming Convention Acceptance Criteria, we must use .docx.
-    link.download = `${safeTitle}_${dateStr}.docx`
+    const projectName = 'laudo'
+    // To strictly avoid Word recovery prompts and "corrupted file" errors on HTML payload,
+    // we use the .doc extension allowing Microsoft Word to natively parse the structure without expecting a strict OpenXML ZIP.
+    link.download = `${projectName}_${safeTitle}_${dateStr}.doc`
 
     document.body.appendChild(link)
     link.click()

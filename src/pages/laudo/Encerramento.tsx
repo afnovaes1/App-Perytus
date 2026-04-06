@@ -4,15 +4,19 @@ import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
-import { Save, FileDown } from 'lucide-react'
-import { exportToWord } from '@/lib/word-export'
+import { Save, FileDown, AlertTriangle } from 'lucide-react'
+import { exportToWord, validateForExport } from '@/lib/word-export'
 import { useNavigate, useParams } from 'react-router-dom'
+import { getReport } from '@/services/reports'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { useState } from 'react'
 
 export default function Encerramento() {
   const { id } = useParams()
   const { data, updateSection, saveReport } = useReport()
   const { toast } = useToast()
   const navigate = useNavigate()
+  const [isExporting, setIsExporting] = useState(false)
 
   const handleSave = async () => {
     await saveReport()
@@ -20,18 +24,30 @@ export default function Encerramento() {
     navigate(`/laudo/${id}/anexos`)
   }
 
+  const isClassificacaoPendente = !data.classificacao?.tipo
+  const isExportReady = validateForExport({ data }, true)
+
   const handleExport = async () => {
-    // Save first to ensure latest data is exported
-    await saveReport()
+    if (!id) return
+    setIsExporting(true)
+    try {
+      // Save first to ensure latest data is exported
+      await saveReport()
 
-    // Construct a temporary report object since we might not have the full record in context
-    const reportToExport = {
-      title: data.identificacao?.sintese?.substring(0, 30) || 'Laudo_Tecnico',
-      created: new Date().toISOString(),
-      data,
+      // Backend Verification: confirm that user is authenticated and has access to the specific record
+      const reportRecord = await getReport(id)
+
+      exportToWord(reportRecord)
+    } catch (error) {
+      toast({
+        title: 'Erro de Autenticação',
+        description:
+          'Você não tem permissão para exportar este laudo ou ocorreu um erro na verificação.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsExporting(false)
     }
-
-    exportToWord(reportToExport)
   }
 
   return (
@@ -39,6 +55,17 @@ export default function Encerramento() {
       <div className="mb-6 border-b-2 border-[#2b579a] pb-2">
         <h2 className="text-[#2b579a] font-serif font-bold text-2xl">10. Encerramento</h2>
       </div>
+
+      {isClassificacaoPendente && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Classificação Pendente</AlertTitle>
+          <AlertDescription>
+            Por favor, defina a Classificação do Documento na aba 12. Classificação antes de
+            exportar.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="space-y-2">
         <p className="text-sm text-slate-500 italic mb-2">
@@ -70,10 +97,11 @@ export default function Encerramento() {
         <Button
           variant="outline"
           onClick={handleExport}
+          disabled={!isExportReady || isExporting}
           className="gap-2 w-full sm:w-auto border-blue-200 text-blue-700 hover:bg-blue-50"
           size="lg"
         >
-          <FileDown className="h-5 w-5" /> Exportar Laudo
+          <FileDown className="h-5 w-5" /> {isExporting ? 'Exportando...' : 'Exportar Laudo'}
         </Button>
         <Button onClick={handleSave} className="gap-2 w-full sm:w-auto" size="lg">
           <Save className="h-4 w-4" /> Salvar e Continuar
