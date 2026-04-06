@@ -39,12 +39,16 @@ const parseGutNum = (val: any): number | null => {
     if (val.value !== undefined) return parseGutNum(val.value)
     if (val.valor !== undefined) return parseGutNum(val.valor)
     if (val.id !== undefined) return parseGutNum(val.id)
+    if (val.score !== undefined) return parseGutNum(val.score)
+    if (val.nota !== undefined) return parseGutNum(val.nota)
     return null
   }
 
   const str = String(val).trim()
   const match = str.match(/^(\d+)/)
-  if (match) return parseInt(match[1], 10)
+  if (match) {
+    return parseInt(match[1], 10)
+  }
   const n = Number(val)
   return isNaN(n) ? null : n
 }
@@ -68,8 +72,36 @@ const getGutField = (m: any, field: string): any => {
     m.priorizacao,
     m.prioridade,
     m.avaliacao,
+    m.diagnostico,
   ]
 
+  // First pass: try to find a key that is clearly the field and holds a valid GUT number (1-5)
+  for (const container of containers) {
+    if (container && typeof container === 'object') {
+      for (const [key, value] of Object.entries(container)) {
+        if (value === undefined || value === null || value === '') continue
+
+        const k = key
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+
+        if (
+          k === searchBase ||
+          k === searchShort ||
+          k.includes(searchBase) ||
+          (k.length <= 2 && k.includes(searchShort))
+        ) {
+          const num = parseGutNum(value)
+          if (num !== null && num >= 1 && num <= 5) {
+            return value
+          }
+        }
+      }
+    }
+  }
+
+  // Second pass: relaxed check fallback
   for (const container of containers) {
     if (container && typeof container === 'object') {
       for (const [key, value] of Object.entries(container)) {
@@ -117,11 +149,18 @@ const getManifestationTitle = (m: any): string => {
     'title',
     'manifestacao',
     'identificacao',
+    'sistema',
+    'componente',
+    'peca',
+    'local',
+    'localizacao',
   ]
 
+  // Direct check
   for (const pKey of possibleKeys) {
     for (const [key, value] of Object.entries(m)) {
       if (value === undefined || value === null || value === '') continue
+      if (typeof value === 'object') continue
       const k = key
         .toLowerCase()
         .normalize('NFD')
@@ -132,15 +171,52 @@ const getManifestationTitle = (m: any): string => {
     }
   }
 
+  // Nested object check
+  for (const [key, value] of Object.entries(m)) {
+    if (value && typeof value === 'object') {
+      for (const pKey of possibleKeys) {
+        for (const [subKey, subValue] of Object.entries(value)) {
+          if (subValue === undefined || subValue === null || subValue === '') continue
+          if (typeof subValue === 'object') continue
+          const sk = subKey
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+          if (sk === pKey) {
+            return String(subValue)
+          }
+        }
+      }
+    }
+  }
+
+  // Fallback to description
   for (const [key, value] of Object.entries(m)) {
     if (value === undefined || value === null || value === '') continue
+    if (typeof value === 'object') continue
     const k = key
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
-    if (k === 'descricao' || k === 'description') {
+    if (k === 'descricao' || k === 'description' || k === 'observacoes' || k === 'detalhes') {
       const str = String(value)
       return str.length > 50 ? str.substring(0, 50) + '...' : str
+    }
+  }
+
+  // Last resort string pick
+  for (const [key, value] of Object.entries(m)) {
+    if (typeof value === 'string' && value.trim() !== '') {
+      const k = key.toLowerCase()
+      if (
+        !k.includes('id') &&
+        !k.includes('foto') &&
+        !k.includes('imagem') &&
+        !k.includes('data')
+      ) {
+        const str = String(value)
+        return str.length > 50 ? str.substring(0, 50) + '...' : str
+      }
     }
   }
 
