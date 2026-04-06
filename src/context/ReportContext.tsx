@@ -48,11 +48,18 @@ export type ClassificacaoData = {
 }
 
 export type EncerramentoData = {
+  consideracoesFinais: string
+  responsabilidadeTecnica: boolean
+}
+
+export type EstimativaData = {
   volumeDocumentos: string
   quantidadeFotos: number | ''
   horasAnaliseManual?: number | ''
   horasImagensManual?: number | ''
   horasRedacaoManual?: number | ''
+  horasRevisaoManual?: number | ''
+  valorHora?: number | ''
 }
 
 export type ReportData = {
@@ -87,6 +94,7 @@ export type ReportData = {
   anexos: AnexosData
   classificacao: ClassificacaoData
   encerramento: EncerramentoData
+  estimativa: EstimativaData
 }
 
 const defaultData: ReportData = {
@@ -116,11 +124,17 @@ const defaultData: ReportData = {
     matrizGUT: { gravidade: '', urgencia: '', tendencia: '', justificativa: '' },
   },
   encerramento: {
+    consideracoesFinais: '',
+    responsabilidadeTecnica: false,
+  },
+  estimativa: {
     volumeDocumentos: 'elevado',
     quantidadeFotos: 55,
     horasAnaliseManual: '',
     horasImagensManual: '',
     horasRedacaoManual: '',
+    horasRevisaoManual: '',
+    valorHora: 350,
   },
 }
 

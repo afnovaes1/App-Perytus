@@ -17,6 +17,7 @@ import Metodologia from './pages/laudo/Metodologia'
 import Anexos from './pages/laudo/Anexos'
 import Classificacao from './pages/laudo/Classificacao'
 import Encerramento from './pages/laudo/Encerramento'
+import Estimativa from './pages/laudo/Estimativa'
 
 const App = () => (
   <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="anexos" element={<Anexos />} />
             <Route path="classificacao" element={<Classificacao />} />
             <Route path="encerramento" element={<Encerramento />} />
+            <Route path="estimativa" element={<Estimativa />} />
           </Route>
         </Route>
 

@@ -11,6 +11,7 @@ import {
   BarChart2,
   Flag,
   CheckCircle2,
+  Calculator,
 } from 'lucide-react'
 import { useReport } from '@/context/ReportContext'
 import { cn } from '@/lib/utils'
@@ -40,6 +41,7 @@ const tabs = [
     path: '/laudo/novo/classificacao',
   },
   { id: 'encerramento', label: 'Encerramento', icon: Flag, path: '/laudo/novo/encerramento' },
+  { id: 'estimativa', label: 'Estimativa', icon: Calculator, path: '/laudo/novo/estimativa' },
 ]
 
 export function WizardLayout() {
@@ -69,6 +71,8 @@ export function WizardLayout() {
       case 'classificacao':
         return !!data.classificacao.estadoDesempenho.classe && !!data.classificacao.prioridade.grau
       case 'encerramento':
+        return !!data.encerramento.consideracoesFinais && data.encerramento.responsabilidadeTecnica
+      case 'estimativa':
         return false
       default:
         return false
