@@ -9,6 +9,16 @@ export type Manifestacao = {
   observacoes: string
 }
 
+export type HipoteseConfianca = 'alta' | 'media' | 'baixa' | ''
+
+export type Hipotese = {
+  id: string
+  descricao: string
+  criterios: string
+  confianca: HipoteseConfianca
+  principal: boolean
+}
+
 export type ReportData = {
   identificacao: {
     destinatario: string
@@ -23,11 +33,13 @@ export type ReportData = {
     comparativos: string
   }
   hipoteses: {
-    texto: string
+    lista: Hipotese[]
   }
   consolidacao: {
-    conclusao: string
+    diagnostico: string
+    prognostico: string
     recomendacoes: string
+    limitacoes: string
   }
   metodologia: {
     normas: string
@@ -38,8 +50,10 @@ const defaultData: ReportData = {
   identificacao: { destinatario: '', local: '', data: undefined },
   manifestacoes: [],
   evidencias: { monitoramento: '', eventos: '', associadas: '', comparativos: '' },
-  hipoteses: { texto: '' },
-  consolidacao: { conclusao: '', recomendacoes: '' },
+  hipoteses: {
+    lista: [{ id: '1', descricao: '', criterios: '', confianca: '', principal: true }],
+  },
+  consolidacao: { diagnostico: '', prognostico: '', recomendacoes: '', limitacoes: '' },
   metodologia: { normas: '' },
 }
 
