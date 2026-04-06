@@ -34,6 +34,14 @@ const displayNum = (val: any): string | number => {
 const parseGutNum = (val: any): number | null => {
   if (val === null || val === undefined || val === '') return null
   if (typeof val === 'number') return val
+
+  if (typeof val === 'object') {
+    if (val.value !== undefined) return parseGutNum(val.value)
+    if (val.valor !== undefined) return parseGutNum(val.valor)
+    if (val.id !== undefined) return parseGutNum(val.id)
+    return null
+  }
+
   const str = String(val).trim()
   const match = str.match(/^(\d+)/)
   if (match) return parseInt(match[1], 10)
@@ -44,25 +52,99 @@ const parseGutNum = (val: any): number | null => {
 const getGutField = (m: any, field: string): any => {
   if (!m) return undefined
 
-  const short = field.charAt(0).toLowerCase()
-  const lower = field.toLowerCase()
-  const cap = field.charAt(0).toUpperCase() + field.slice(1)
-  const shortCap = short.toUpperCase()
+  const searchBase = field
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+  const searchShort = searchBase.charAt(0)
 
-  const keysToTry = [lower, short, cap, shortCap]
-  const containers = [m, m.gut, m.matrizGut, m.matriz]
+  const containers = [
+    m,
+    m.gut,
+    m.matrizGut,
+    m.matriz,
+    m.matriz_gut,
+    m.classificacao,
+    m.priorizacao,
+    m.prioridade,
+    m.avaliacao,
+  ]
 
   for (const container of containers) {
     if (container && typeof container === 'object') {
-      for (const key of keysToTry) {
-        if (container[key] !== undefined && container[key] !== null && container[key] !== '') {
-          return container[key]
+      for (const [key, value] of Object.entries(container)) {
+        if (value === undefined || value === null || value === '') continue
+
+        const k = key
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+        if (
+          k === searchBase ||
+          k === searchShort ||
+          k === `${searchBase}value` ||
+          k === `${searchShort}value` ||
+          k === `valor${searchBase}` ||
+          k === `valor${searchShort}` ||
+          k === `gut${searchBase}` ||
+          k === `gut_${searchBase}` ||
+          k === `gut${searchShort}` ||
+          k === `gut_${searchShort}` ||
+          k === `matriz${searchBase}` ||
+          k === `matriz_${searchBase}` ||
+          k === `matriz${searchShort}` ||
+          k === `matriz_${searchShort}`
+        ) {
+          return value
         }
       }
     }
   }
 
   return undefined
+}
+
+const getManifestationTitle = (m: any): string => {
+  if (!m || typeof m !== 'object') return 'Sem título'
+
+  const possibleKeys = [
+    'titulo',
+    'nome',
+    'elemento',
+    'tipo',
+    'problema',
+    'patologia',
+    'title',
+    'manifestacao',
+    'identificacao',
+  ]
+
+  for (const pKey of possibleKeys) {
+    for (const [key, value] of Object.entries(m)) {
+      if (value === undefined || value === null || value === '') continue
+      const k = key
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+      if (k === pKey) {
+        return String(value)
+      }
+    }
+  }
+
+  for (const [key, value] of Object.entries(m)) {
+    if (value === undefined || value === null || value === '') continue
+    const k = key
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+    if (k === 'descricao' || k === 'description') {
+      const str = String(value)
+      return str.length > 50 ? str.substring(0, 50) + '...' : str
+    }
+  }
+
+  return 'Sem título'
 }
 
 export const validateForExport = (
@@ -192,13 +274,14 @@ export const exportToWord = (
         manifestacoes.length > 0
           ? manifestacoes
               .map((m: any, i: number) => {
+                const title = getManifestationTitle(m)
                 return `
         <div style="margin-bottom: 20px;">
-          <h3>Manifestação ${i + 1}: ${sanitize(m.titulo || m.nome || m.elemento || 'Sem título')}</h3>
+          <h3>Manifestação ${i + 1}: ${sanitize(title)}</h3>
           <p><strong>6.1 Descrição</strong></p>
           <ul>
             <li><strong>Local:</strong> ${sanitize(m.local || m.localizacao)}</li>
-            <li><strong>Elemento:</strong> ${sanitize(m.titulo || m.nome || m.elemento || 'Sem título')}</li>
+            <li><strong>Elemento:</strong> ${sanitize(title)}</li>
             <li><strong>Intensidade:</strong> ${sanitize(m.intensidade)}</li>
             <li><strong>Evolução:</strong> ${sanitize(m.evolucao)}</li>
           </ul>
@@ -255,9 +338,11 @@ export const exportToWord = (
                     const t = parseGutNum(rawT)
 
                     const result = g !== null && u !== null && t !== null ? g * u * t : '&nbsp;'
+                    const title = getManifestationTitle(m)
+
                     return `
                     <tr>
-                      <td>${sanitize(m.titulo || m.nome || m.elemento || 'Sem título')}</td>
+                      <td>${sanitize(title)}</td>
                       <td>${g !== null ? g : '&nbsp;'}</td>
                       <td>${u !== null ? u : '&nbsp;'}</td>
                       <td>${t !== null ? t : '&nbsp;'}</td>
