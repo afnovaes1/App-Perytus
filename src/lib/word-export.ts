@@ -34,6 +34,7 @@ export const exportToWord = (
   const classificacao = data.classificacao || {}
   const encerramento = data.encerramento || {}
   const referencias = data.referencias || {}
+  const anexos = data.anexos || []
 
   const calculateGUT = (m: any) => {
     const g = Number(m.gravidade) || 1
@@ -55,9 +56,10 @@ export const exportToWord = (
       <meta charset="utf-8">
       <style>
         body { font-family: 'Calibri', 'Arial', sans-serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
-        h1 { font-size: 16pt; color: #2b579a; font-weight: bold; }
-        h2 { font-size: 14pt; color: #2b579a; margin-top: 24px; font-weight: bold; }
+        h1 { font-size: 16pt; color: #2b579a; font-weight: bold; text-align: center; margin-bottom: 24px; }
+        h2 { font-size: 14pt; color: #2b579a; margin-top: 24px; font-weight: bold; border-bottom: 1px solid #2b579a; padding-bottom: 4px; }
         h3 { font-size: 12pt; color: #333; margin-top: 16px; font-weight: bold; }
+        p { margin-bottom: 10px; }
         table { border-collapse: collapse; width: 100%; margin: 15px 0; }
         th, td { border: 1px solid #000; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; font-weight: bold; }
@@ -66,11 +68,15 @@ export const exportToWord = (
         .img-container { text-align: center; margin: 15px 0; }
         .img-container img { max-width: 500px; height: auto; border: 1px solid #ccc; }
         .field-label { font-weight: bold; }
+        .header-info { margin-bottom: 30px; }
+        ul { margin-top: 0; padding-left: 20px; }
       </style>
     </head>
     <body>
       <h1>${report.title || 'Laudo Técnico'}</h1>
-      <p><span class="field-label">Data de Criação:</span> ${format(new Date(report.created), 'dd/MM/yyyy')}</p>
+      <div class="header-info">
+        <p><span class="field-label">Data de Criação:</span> ${format(new Date(report.created), 'dd/MM/yyyy')}</p>
+      </div>
 
       <h2>1. Síntese / Contexto</h2>
       <p>${identificacao.sintese || 'Não informado.'}</p>
@@ -78,7 +84,13 @@ export const exportToWord = (
       <h2>2. Classificação do Documento</h2>
       <p>Este documento é classificado como: <strong>${classificacao.tipo || 'Não classificado'}</strong></p>
 
-      <h2>3. Matriz GUT</h2>
+      <h2>3. Termos e Definições Técnicas de Referência</h2>
+      <p>${metodologia.termos || 'Não informado.'}</p>
+
+      <h2>4. Metodologia / Classificação Metodológica</h2>
+      <p>${metodologia.texto || metodologia.classificacao || 'Não informado.'}</p>
+
+      <h2>5. Matriz GUT</h2>
       <table class="gut-table">
         <thead>
           <tr>
@@ -95,14 +107,14 @@ export const exportToWord = (
               ? manifestacoes
                   .map(
                     (m: any) => `
-              <tr>
-                <td>${m.titulo || 'Sem título'}</td>
-                <td>${m.gravidade || 1}</td>
-                <td>${m.urgencia || 1}</td>
-                <td>${m.tendencia || 1}</td>
-                <td><strong>${calculateGUT(m)}</strong></td>
-              </tr>
-            `,
+            <tr>
+              <td>${m.titulo || 'Sem título'}</td>
+              <td>${m.gravidade || 1}</td>
+              <td>${m.urgencia || 1}</td>
+              <td>${m.tendencia || 1}</td>
+              <td><strong>${calculateGUT(m)}</strong></td>
+            </tr>
+          `,
                   )
                   .join('')
               : '<tr><td colspan="5">Nenhuma manifestação registrada.</td></tr>'
@@ -110,7 +122,7 @@ export const exportToWord = (
         </tbody>
       </table>
 
-      <h2>4. Estimativa de Esforço</h2>
+      <h2>6. Estimativa de Esforço</h2>
       <table>
         <thead>
           <tr>
@@ -131,32 +143,58 @@ export const exportToWord = (
         </tbody>
       </table>
 
-      <h2>5. Termos e Definições Técnicas de Referência</h2>
-      <p>${metodologia.termos || 'Não informado.'}</p>
+      <h2>7. Documentos e Anexos</h2>
+      ${
+        anexos.length > 0
+          ? '<ul>' +
+            anexos.map((a: any) => `<li>${a.titulo || a.nome || 'Anexo'}</li>`).join('') +
+            '</ul>'
+          : '<p>Nenhum anexo registrado.</p>'
+      }
+      ${
+        anexos.length > 0
+          ? anexos
+              .map((a: any) => {
+                if (a.url || a.arquivo) {
+                  const src = a.url || a.arquivo
+                  if (src.match(/\.(jpeg|jpg|gif|png)$/i) || src.startsWith('data:image')) {
+                    return `
+                    <div class="img-container">
+                      <p><strong>${a.titulo || a.nome || 'Anexo'}</strong></p>
+                      <img src="${src}" alt="Anexo" />
+                    </div>
+                  `
+                  }
+                }
+                return ''
+              })
+              .join('')
+          : ''
+      }
 
-      <h2>6. Evidências</h2>
+      <h2>8. Evidências</h2>
       <p>${evidencias.texto || 'Não informado.'}</p>
 
-      <h2>7. Hipóteses</h2>
+      <h2>9. Hipóteses</h2>
       <p>${hipoteses.texto || 'Não informado.'}</p>
 
-      <h2>8. Consolidação</h2>
-      <h3>8.1 Diagnóstico</h3>
+      <h2>10. Consolidação</h2>
+      <h3>10.1 Diagnóstico</h3>
       <p>${consolidacao.diagnostico || 'Não informado.'}</p>
-      <h3>8.2 Prognóstico</h3>
+      <h3>10.2 Prognóstico</h3>
       <p>${consolidacao.prognostico || 'Não informado.'}</p>
-      <h3>8.3 Recomendações</h3>
+      <h3>10.3 Recomendações</h3>
       <p>${consolidacao.recomendacoes || 'Não informado.'}</p>
-      <h3>8.4 Limitações</h3>
+      <h3>10.4 Limitações</h3>
       <p>${consolidacao.limitacoes || 'Não informado.'}</p>
 
-      <h2>9. Manifestações Técnicas</h2>
+      <h2>11. Manifestações Técnicas</h2>
       ${
         manifestacoes.length > 0
           ? manifestacoes
               .map(
                 (m: any, i: number) => `
-        <h3>9.${i + 1} ${m.titulo || 'Manifestação'}</h3>
+        <h3>11.${i + 1} ${m.titulo || 'Manifestação'}</h3>
         <p><span class="field-label">Local:</span> ${m.local || 'Não informado'}</p>
         <p><span class="field-label">Intensidade:</span> ${m.intensidade || 'Não informada'}</p>
         <p><span class="field-label">Evolução:</span> ${m.evolucao || 'Não informada'}</p>
@@ -180,11 +218,17 @@ export const exportToWord = (
           : '<p>Nenhuma manifestação registrada.</p>'
       }
 
-      <h2>10. Declaração de Responsabilidade Técnica e Encerramento</h2>
-      <p>${encerramento.texto || 'Não informado.'}</p>
-      ${encerramento.responsabilidade ? `<p><strong>Responsável Técnico:</strong> ${encerramento.responsabilidade}</p>` : ''}
+      <h2>12. Declaração de Responsabilidade Técnica</h2>
+      <p>${
+        encerramento.responsabilidade
+          ? `<strong>Responsável Técnico:</strong> ${encerramento.responsabilidade}`
+          : 'Não informado.'
+      }</p>
 
-      <h2>11. Referências</h2>
+      <h2>13. Encerramento</h2>
+      <p>${encerramento.texto || 'Não informado.'}</p>
+
+      <h2>14. Referências</h2>
       <p>${referencias.texto || 'Não informado.'}</p>
       
     </body>
