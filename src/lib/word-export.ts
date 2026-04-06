@@ -9,7 +9,7 @@ export const validateForExport = (report: ReportRecord | { data: any }): boolean
   if (!classificacao.tipo) {
     toast.error('Classificação Pendente', {
       description:
-        'Por favor, defina a Classificação do Documento (Observação, Relatório ou Laudo) antes de exportar.',
+        'Por favor, defina a Classificação do Documento (Observação, Relatório ou Laudo) na aba 12. Classificação antes de exportar.',
       duration: 5000,
     })
     return false
@@ -34,7 +34,7 @@ export const exportToWord = (
   const classificacao = data.classificacao || {}
   const encerramento = data.encerramento || {}
   const referencias = data.referencias || {}
-  const anexos = data.anexos || []
+  const anexos = data.anexos || {}
 
   const calculateGUT = (m: any) => {
     const g = Number(m.gravidade) || 1
@@ -47,8 +47,8 @@ export const exportToWord = (
     (Number(estimativa.compreensao) || 0) +
     (Number(estimativa.estudo) || 0) +
     (Number(estimativa.organizacao) || 0) +
-    (Number(estimativa.imagens) || 0) +
-    (Number(estimativa.redacao) || 0)
+    (Number(estimativa.tratamento) || 0) +
+    (Number(estimativa.consolidacao) || 0)
 
   const html = `
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
@@ -81,16 +81,7 @@ export const exportToWord = (
       <h2>1. Síntese / Contexto</h2>
       <p>${identificacao.sintese || 'Não informado.'}</p>
 
-      <h2>2. Classificação do Documento</h2>
-      <p>Este documento é classificado como: <strong>${classificacao.tipo || 'Não classificado'}</strong></p>
-
-      <h2>3. Termos e Definições Técnicas de Referência</h2>
-      <p>${metodologia.termos || 'Não informado.'}</p>
-
-      <h2>4. Metodologia / Classificação Metodológica</h2>
-      <p>${metodologia.texto || metodologia.classificacao || 'Não informado.'}</p>
-
-      <h2>5. Matriz GUT</h2>
+      <h2>2. Matriz GUT</h2>
       <table class="gut-table">
         <thead>
           <tr>
@@ -122,7 +113,10 @@ export const exportToWord = (
         </tbody>
       </table>
 
-      <h2>6. Estimativa de Esforço</h2>
+      <h2>3. Classificação do Documento</h2>
+      <p>Este documento é classificado como: <strong>${classificacao.tipo || 'Não classificado'}</strong></p>
+
+      <h2>4. Estimativa de Esforço</h2>
       <table>
         <thead>
           <tr>
@@ -134,8 +128,8 @@ export const exportToWord = (
           <tr><td>Compreensão do Problema</td><td>${estimativa.compreensao || 0}</td></tr>
           <tr><td>Estudo e Pesquisa</td><td>${estimativa.estudo || 0}</td></tr>
           <tr><td>Organização de Dados</td><td>${estimativa.organizacao || 0}</td></tr>
-          <tr><td>Tratamento de Imagens</td><td>${estimativa.imagens || 0}</td></tr>
-          <tr><td>Redação Técnica</td><td>${estimativa.redacao || 0}</td></tr>
+          <tr><td>Tratamento de Imagens</td><td>${estimativa.tratamento || 0}</td></tr>
+          <tr><td>Consolidação / Redação</td><td>${estimativa.consolidacao || 0}</td></tr>
           <tr>
             <th style="background-color: #d9e1f2;">Total de Esforço</th>
             <th style="background-color: #d9e1f2;">${effortTotal} horas</th>
@@ -143,62 +137,40 @@ export const exportToWord = (
         </tbody>
       </table>
 
-      <h2>7. Documentos e Anexos</h2>
-      ${
-        anexos.length > 0
-          ? '<ul>' +
-            anexos.map((a: any) => `<li>${a.titulo || a.nome || 'Anexo'}</li>`).join('') +
-            '</ul>'
-          : '<p>Nenhum anexo registrado.</p>'
-      }
-      ${
-        anexos.length > 0
-          ? anexos
-              .map((a: any) => {
-                if (a.url || a.arquivo) {
-                  const src = a.url || a.arquivo
-                  if (src.match(/\.(jpeg|jpg|gif|png)$/i) || src.startsWith('data:image')) {
-                    return `
-                    <div class="img-container">
-                      <p><strong>${a.titulo || a.nome || 'Anexo'}</strong></p>
-                      <img src="${src}" alt="Anexo" />
-                    </div>
-                  `
-                  }
-                }
-                return ''
-              })
-              .join('')
-          : ''
-      }
+      <h2>5. Termos e Definições Técnicas de Referência</h2>
+      <p>${metodologia.alcanceInterpretativo || 'Não informado.'}</p>
 
-      <h2>8. Evidências</h2>
-      <p>${evidencias.texto || 'Não informado.'}</p>
+      <h2>6. Evidências</h2>
+      <p><strong>Monitoramento:</strong> ${evidencias.monitoramento || 'Não informado.'}</p>
+      <p><strong>Eventos:</strong> ${evidencias.eventos || 'Não informado.'}</p>
+      <p><strong>Evidências Associadas:</strong> ${evidencias.associadas || 'Não informado.'}</p>
 
-      <h2>9. Hipóteses</h2>
-      <p>${hipoteses.texto || 'Não informado.'}</p>
+      <h2>7. Hipóteses</h2>
+      <p><strong>Descrição:</strong> ${hipoteses.principal?.descricao || 'Não informada.'}</p>
+      <p><strong>Critérios:</strong> ${hipoteses.principal?.criterios || 'Não informados.'}</p>
+      <p><strong>Grau de Confiança:</strong> ${hipoteses.principal?.confianca || 'Não informado.'}</p>
 
-      <h2>10. Consolidação</h2>
-      <h3>10.1 Diagnóstico</h3>
+      <h2>8. Consolidação</h2>
+      <h3>8.1 Diagnóstico</h3>
       <p>${consolidacao.diagnostico || 'Não informado.'}</p>
-      <h3>10.2 Prognóstico</h3>
+      <h3>8.2 Prognóstico</h3>
       <p>${consolidacao.prognostico || 'Não informado.'}</p>
-      <h3>10.3 Recomendações</h3>
+      <h3>8.3 Recomendações</h3>
       <p>${consolidacao.recomendacoes || 'Não informado.'}</p>
-      <h3>10.4 Limitações</h3>
+      <h3>8.4 Limitações</h3>
       <p>${consolidacao.limitacoes || 'Não informado.'}</p>
 
-      <h2>11. Manifestações Técnicas</h2>
+      <h2>9. Manifestações Técnicas</h2>
       ${
         manifestacoes.length > 0
           ? manifestacoes
               .map(
                 (m: any, i: number) => `
-        <h3>11.${i + 1} ${m.titulo || 'Manifestação'}</h3>
-        <p><span class="field-label">Local:</span> ${m.local || 'Não informado'}</p>
+        <h3>9.${i + 1} ${m.titulo || 'Manifestação'}</h3>
+        <p><span class="field-label">Local:</span> ${m.local || m.localizacao || 'Não informado'}</p>
         <p><span class="field-label">Intensidade:</span> ${m.intensidade || 'Não informada'}</p>
         <p><span class="field-label">Evolução:</span> ${m.evolucao || 'Não informada'}</p>
-        <p><span class="field-label">Descrição:</span> ${m.descricao || 'Sem descrição'}</p>
+        <p><span class="field-label">Descrição:</span> ${m.descricao || m.observacoes || 'Sem descrição'}</p>
         ${
           m.fotos && m.fotos.length > 0
             ? m.fotos
@@ -218,15 +190,32 @@ export const exportToWord = (
           : '<p>Nenhuma manifestação registrada.</p>'
       }
 
-      <h2>12. Declaração de Responsabilidade Técnica</h2>
+      <h2>10. Encerramento</h2>
+      <p>${encerramento.texto || 'Não informado.'}</p>
+
+      <h2>11. Declaração de Responsabilidade Técnica</h2>
       <p>${
         encerramento.responsabilidade
           ? `<strong>Responsável Técnico:</strong> ${encerramento.responsabilidade}`
           : 'Não informado.'
       }</p>
 
-      <h2>13. Encerramento</h2>
-      <p>${encerramento.texto || 'Não informado.'}</p>
+      <h2>12. Metodologia / Classificação Metodológica</h2>
+      <p><strong>Procedimentos Adotados:</strong> ${metodologia.procedimentosAdotados?.join(', ') || 'Não informados'}</p>
+      <p><strong>Limitações da Investigação:</strong> ${metodologia.limitacoesInvestigacao?.join(', ') || 'Não informadas'}</p>
+      <p><strong>Lacunas Metodológicas:</strong> ${metodologia.lacunasMetodologicas || 'Não informadas'}</p>
+      <p><strong>Amplitude Técnica:</strong> ${metodologia.amplitudeTecnica || 'Não informada'}</p>
+      <p><strong>Estado Aparente de Desempenho:</strong> ${classificacao.estadoDesempenho || 'Não informado'}</p>
+      <p><strong>Classificação de Prioridade:</strong> ${classificacao.prioridade || 'Não informada'}</p>
+
+      <h2>13. Documentos e Anexos</h2>
+      ${
+        anexos.tipos && anexos.tipos.length > 0
+          ? '<p><strong>Tipos de Anexo:</strong> ' + anexos.tipos.join(', ') + '</p>'
+          : '<p>Nenhum anexo registrado.</p>'
+      }
+      <p><strong>Quantidade de Fotos:</strong> ${anexos.quantidadeFotos || 'Não informada'}</p>
+      <p><strong>Organização:</strong> ${anexos.organizacaoFotos || 'Não informada'}</p>
 
       <h2>14. Referências</h2>
       <p>${referencias.texto || 'Não informado.'}</p>

@@ -3,6 +3,7 @@ import { useReport } from '@/context/ReportContext'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
 import { Save, FileDown } from 'lucide-react'
 import { exportToWord } from '@/lib/word-export'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -49,6 +50,20 @@ export default function Encerramento() {
           placeholder="Insira as considerações finais..."
           className="min-h-[150px]"
         />
+      </div>
+
+      <div className="space-y-2 mt-6">
+        <h3 className="text-[#2b579a] font-bold text-lg">
+          11. Declaração de Responsabilidade Técnica
+        </h3>
+        <p className="text-sm text-slate-500 italic mb-2">Nome do Responsável Técnico.</p>
+        <div className="max-w-md">
+          <Input
+            value={data.encerramento.responsabilidade || ''}
+            onChange={(e) => updateSection('encerramento', { responsabilidade: e.target.value })}
+            placeholder="Ex: Eng. João da Silva"
+          />
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 mt-8 border-t">

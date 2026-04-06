@@ -20,8 +20,8 @@ export default function Classificacao() {
   const { toast } = useToast()
   const navigate = useNavigate()
 
-  const { estadoDesempenho, prioridade, matrizGUT } = data.classificacao
-  const { gravidade, urgencia, tendencia } = matrizGUT
+  const { tipo, estadoDesempenho, prioridade, matrizGUT } = data.classificacao || {}
+  const { gravidade, urgencia, tendencia } = matrizGUT || {}
 
   const handleSave = async () => {
     await saveReport()
@@ -49,8 +49,28 @@ export default function Classificacao() {
 
       <div className="space-y-8">
         <div>
+          <h3 className="text-[#2b579a] font-bold text-lg mb-4">12.1 Tipo de Documento</h3>
+          <div className="max-w-md flex items-center gap-4">
+            <Label className="font-semibold whitespace-nowrap">Classificação:</Label>
+            <Select
+              value={tipo || ''}
+              onValueChange={(v) => updateSection('classificacao', { tipo: v })}
+            >
+              <SelectTrigger className="bg-white">
+                <SelectValue placeholder="Selecione..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Observação">Observação</SelectItem>
+                <SelectItem value="Relatório">Relatório</SelectItem>
+                <SelectItem value="Laudo">Laudo</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div>
           <h3 className="text-[#2b579a] font-bold text-lg mb-4">
-            12.1 Estado Aparente de Desempenho
+            12.2 Estado Aparente de Desempenho
           </h3>
           <div className="max-w-md flex items-center gap-4">
             <Label className="font-semibold whitespace-nowrap">Classificação:</Label>
@@ -78,7 +98,7 @@ export default function Classificacao() {
 
         <div>
           <h3 className="text-[#2b579a] font-bold text-lg mb-4">
-            12.2 Classificação de Prioridade (NBR 16747)
+            12.3 Classificação de Prioridade (NBR 16747)
           </h3>
           <div className="max-w-md flex items-center gap-4">
             <Label className="font-semibold whitespace-nowrap">Classificação:</Label>
@@ -106,7 +126,7 @@ export default function Classificacao() {
 
         <div>
           <h3 className="text-[#2b579a] font-bold text-lg mb-4">
-            12.3 Matriz GUT (Gravidade × Urgência × Tendência)
+            12.4 Matriz GUT (Gravidade × Urgência × Tendência)
           </h3>
 
           <div className="grid gap-6 max-w-xl pl-2 mb-6">

@@ -50,6 +50,7 @@ export type ReportData = {
   }
   encerramento: {
     texto: string
+    responsabilidade?: string
   }
   anexos: {
     tipos: string[]
@@ -57,6 +58,7 @@ export type ReportData = {
     organizacaoFotos: string
   }
   classificacao: {
+    tipo: string
     estadoDesempenho: string
     prioridade: string
     matrizGUT: {
@@ -85,9 +87,10 @@ export const defaultData: ReportData = {
     lacunasMetodologicas: '',
   },
   estimativa: { compreensao: '', estudo: '', organizacao: '', tratamento: '', consolidacao: '' },
-  encerramento: { texto: '' },
+  encerramento: { texto: '', responsabilidade: '' },
   anexos: { tipos: [], quantidadeFotos: '', organizacaoFotos: '' },
   classificacao: {
+    tipo: '',
     estadoDesempenho: '',
     prioridade: '',
     matrizGUT: { gravidade: '', urgencia: '', tendencia: '' },
