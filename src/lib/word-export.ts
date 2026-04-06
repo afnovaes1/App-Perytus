@@ -31,6 +31,29 @@ const displayNum = (val: any): string | number => {
   return isNaN(n) ? '&nbsp;' : n
 }
 
+const parseGutNum = (val: any): number | null => {
+  if (val === null || val === undefined || val === '') return null
+  if (typeof val === 'number') return val
+  const str = String(val).trim()
+  const match = str.match(/^(\d+)/)
+  if (match) return parseInt(match[1], 10)
+  const n = Number(val)
+  return isNaN(n) ? null : n
+}
+
+const getGutField = (m: any, field: string): any => {
+  if (m[field] !== undefined) return m[field]
+  if (m.gut && m.gut[field] !== undefined) return m.gut[field]
+  if (m.matrizGut && m.matrizGut[field] !== undefined) return m.matrizGut[field]
+
+  const short = field.charAt(0)
+  if (m[short] !== undefined) return m[short]
+  if (m.gut && m.gut[short] !== undefined) return m.gut[short]
+  if (m.matrizGut && m.matrizGut[short] !== undefined) return m.matrizGut[short]
+
+  return undefined
+}
+
 export const validateForExport = (
   report: ReportRecord | { data: any },
   silent = false,
@@ -212,19 +235,21 @@ export const exportToWord = (
             manifestacoes.length > 0
               ? manifestacoes
                   .map((m: any) => {
-                    const g =
-                      m.gravidade === '' || m.gravidade === undefined ? null : parseNum(m.gravidade)
-                    const u =
-                      m.urgencia === '' || m.urgencia === undefined ? null : parseNum(m.urgencia)
-                    const t =
-                      m.tendencia === '' || m.tendencia === undefined ? null : parseNum(m.tendencia)
+                    const rawG = getGutField(m, 'gravidade')
+                    const rawU = getGutField(m, 'urgencia')
+                    const rawT = getGutField(m, 'tendencia')
+
+                    const g = parseGutNum(rawG)
+                    const u = parseGutNum(rawU)
+                    const t = parseGutNum(rawT)
+
                     const result = g !== null && u !== null && t !== null ? g * u * t : '&nbsp;'
                     return `
                     <tr>
                       <td>${sanitize(m.titulo || 'Sem título')}</td>
-                      <td>${displayNum(m.gravidade)}</td>
-                      <td>${displayNum(m.urgencia)}</td>
-                      <td>${displayNum(m.tendencia)}</td>
+                      <td>${g !== null ? g : '&nbsp;'}</td>
+                      <td>${u !== null ? u : '&nbsp;'}</td>
+                      <td>${t !== null ? t : '&nbsp;'}</td>
                       <td><strong>${result}</strong></td>
                     </tr>
                   `
