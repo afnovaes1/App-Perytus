@@ -50,6 +50,9 @@ export type ClassificacaoData = {
 export type EncerramentoData = {
   volumeDocumentos: string
   quantidadeFotos: number | ''
+  horasAnaliseManual?: number | ''
+  horasImagensManual?: number | ''
+  horasRedacaoManual?: number | ''
 }
 
 export type ReportData = {
@@ -115,6 +118,9 @@ const defaultData: ReportData = {
   encerramento: {
     volumeDocumentos: 'elevado',
     quantidadeFotos: 55,
+    horasAnaliseManual: '',
+    horasImagensManual: '',
+    horasRedacaoManual: '',
   },
 }
 
