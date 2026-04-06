@@ -7,6 +7,9 @@ import {
   Lightbulb,
   CheckSquare,
   ClipboardList,
+  Paperclip,
+  BarChart2,
+  Flag,
   CheckCircle2,
 } from 'lucide-react'
 import { useReport } from '@/context/ReportContext'
@@ -29,6 +32,14 @@ const tabs = [
     path: '/laudo/novo/consolidacao',
   },
   { id: 'metodologia', label: 'Metodologia', icon: ClipboardList, path: '/laudo/novo/metodologia' },
+  { id: 'anexos', label: 'Anexos', icon: Paperclip, path: '/laudo/novo/anexos' },
+  {
+    id: 'classificacao',
+    label: 'Classificação',
+    icon: BarChart2,
+    path: '/laudo/novo/classificacao',
+  },
+  { id: 'encerramento', label: 'Encerramento', icon: Flag, path: '/laudo/novo/encerramento' },
 ]
 
 export function WizardLayout() {
@@ -52,7 +63,13 @@ export function WizardLayout() {
       case 'consolidacao':
         return !!data.consolidacao.conclusao
       case 'metodologia':
-        return !!data.metodologia.normas
+        return data.metodologia.procedimentosAdotados.length > 0
+      case 'anexos':
+        return data.anexos.tipos.length > 0 || !!data.anexos.descricaoAdicional
+      case 'classificacao':
+        return !!data.classificacao.estadoDesempenho.classe && !!data.classificacao.prioridade.grau
+      case 'encerramento':
+        return false
       default:
         return false
     }

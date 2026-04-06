@@ -14,6 +14,9 @@ import Evidencias from './pages/laudo/Evidencias'
 import Hipoteses from './pages/laudo/Hipoteses'
 import Consolidacao from './pages/laudo/Consolidacao'
 import Metodologia from './pages/laudo/Metodologia'
+import Anexos from './pages/laudo/Anexos'
+import Classificacao from './pages/laudo/Classificacao'
+import Encerramento from './pages/laudo/Encerramento'
 
 const App = () => (
   <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
@@ -39,6 +42,9 @@ const App = () => (
             <Route path="hipoteses" element={<Hipoteses />} />
             <Route path="consolidacao" element={<Consolidacao />} />
             <Route path="metodologia" element={<Metodologia />} />
+            <Route path="anexos" element={<Anexos />} />
+            <Route path="classificacao" element={<Classificacao />} />
+            <Route path="encerramento" element={<Encerramento />} />
           </Route>
         </Route>
 

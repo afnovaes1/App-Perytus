@@ -19,6 +19,34 @@ export type Hipotese = {
   principal: boolean
 }
 
+export type AnexosData = {
+  tipos: string[]
+  descricaoAdicional: string
+  relatorioFotografico: {
+    quantidade: string
+    organizacao: string
+    observacoes: string
+  }
+  observacoesGerais: string
+}
+
+export type ClassificacaoData = {
+  estadoDesempenho: {
+    classe: string
+    justificativa: string
+  }
+  prioridade: {
+    grau: string
+    fundamentacao: string
+  }
+  matrizGUT: {
+    gravidade: number | ''
+    urgencia: number | ''
+    tendencia: number | ''
+    justificativa: string
+  }
+}
+
 export type ReportData = {
   identificacao: {
     destinatario: string
@@ -48,6 +76,8 @@ export type ReportData = {
     descricaoLimitacoes: string
     alcanceInterpretativo: string
   }
+  anexos: AnexosData
+  classificacao: ClassificacaoData
 }
 
 const defaultData: ReportData = {
@@ -64,6 +94,17 @@ const defaultData: ReportData = {
     limitacoesInvestigacao: [],
     descricaoLimitacoes: '',
     alcanceInterpretativo: '',
+  },
+  anexos: {
+    tipos: [],
+    descricaoAdicional: '',
+    relatorioFotografico: { quantidade: '', organizacao: '', observacoes: '' },
+    observacoesGerais: '',
+  },
+  classificacao: {
+    estadoDesempenho: { classe: '', justificativa: '' },
+    prioridade: { grau: '', fundamentacao: '' },
+    matrizGUT: { gravidade: '', urgencia: '', tendencia: '', justificativa: '' },
   },
 }
 
