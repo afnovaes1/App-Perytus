@@ -48,6 +48,7 @@ export type ClassificacaoData = {
 }
 
 export type EncerramentoData = {
+  classificacaoDocumento: string
   consideracoesFinais: string
   responsabilidadeTecnica: boolean
 }
@@ -124,6 +125,7 @@ const defaultData: ReportData = {
     matrizGUT: { gravidade: '', urgencia: '', tendencia: '', justificativa: '' },
   },
   encerramento: {
+    classificacaoDocumento: '',
     consideracoesFinais: '',
     responsabilidadeTecnica: false,
   },

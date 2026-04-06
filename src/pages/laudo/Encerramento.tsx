@@ -1,6 +1,7 @@
 import React from 'react'
-import { Save, ChevronLeft, ChevronRight, ShieldCheck } from 'lucide-react'
+import { Save, ChevronLeft, ChevronRight, ShieldCheck, FileText, CheckCircle2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
@@ -15,11 +16,30 @@ export default function Encerramento() {
   const { data, updateSection } = useReport()
 
   const encerramento = data.encerramento || {
+    classificacaoDocumento: '',
     consideracoesFinais: '',
     responsabilidadeTecnica: false,
   }
 
   const handleUpdate = (f: string, v: string | boolean) => updateSection('encerramento', { [f]: v })
+
+  const classificacaoOptions = [
+    {
+      id: 'observacao',
+      title: 'Observação Técnica',
+      description: 'Registro inicial de observações sem análise aprofundada',
+    },
+    {
+      id: 'relatorio',
+      title: 'Relatório Técnico',
+      description: 'Análise técnica com metodologia parcialmente aplicada',
+    },
+    {
+      id: 'laudo',
+      title: 'Laudo Técnico Estruturado',
+      description: 'Documento completo com metodologia rigorosa',
+    },
+  ]
 
   const handleSave = () => {
     toast({
@@ -37,6 +57,37 @@ export default function Encerramento() {
           Forneça as considerações finais e assuma a responsabilidade técnica pelo laudo.
         </p>
       </div>
+
+      <Card className="border-border/60 shadow-sm mb-6">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-2">
+            <FileText className="w-5 h-5 text-slate-500" />
+            <CardTitle className="text-xl text-slate-800">Classificação do Documento</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {classificacaoOptions.map((opt) => (
+            <div
+              key={opt.id}
+              onClick={() => handleUpdate('classificacaoDocumento', opt.id)}
+              className={cn(
+                'p-4 rounded-lg border cursor-pointer transition-all flex items-center justify-between',
+                encerramento.classificacaoDocumento === opt.id
+                  ? 'border-teal-600 bg-teal-50/30 ring-1 ring-teal-600'
+                  : 'border-slate-200 hover:border-slate-300 bg-white',
+              )}
+            >
+              <div>
+                <h4 className="font-semibold text-slate-800">{opt.title}</h4>
+                <p className="text-sm text-slate-500">{opt.description}</p>
+              </div>
+              {encerramento.classificacaoDocumento === opt.id && (
+                <CheckCircle2 className="w-5 h-5 text-teal-600" />
+              )}
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
       <Card className="border-border/60 shadow-sm">
         <CardHeader className="pb-4">
