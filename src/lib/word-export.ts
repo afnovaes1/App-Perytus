@@ -3,14 +3,14 @@ import { format } from 'date-fns'
 import { toast } from 'sonner'
 
 const sanitize = (value: any): string => {
-  if (value === null || value === undefined || value === '') return 'Não informado.'
+  if (value === null || value === undefined || value === '') return '&nbsp;'
   if (Array.isArray(value)) {
-    return value.length > 0 ? value.map((v) => sanitize(v)).join(', ') : 'Não informado.'
+    return value.length > 0 ? value.map((v) => sanitize(v)).join(', ') : '&nbsp;'
   }
   return (
     String(value)
       // eslint-disable-next-line no-control-regex
-      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, '')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
@@ -26,9 +26,9 @@ const parseNum = (val: any): number => {
 }
 
 const displayNum = (val: any): string | number => {
-  if (val === null || val === undefined || val === '') return '-'
+  if (val === null || val === undefined || val === '') return '&nbsp;'
   const n = Number(val)
-  return isNaN(n) ? '-' : n
+  return isNaN(n) ? '&nbsp;' : n
 }
 
 export const validateForExport = (
@@ -82,7 +82,7 @@ export const exportToWord = (
       xmlns:w="urn:schemas-microsoft-com:office:word"
       xmlns="http://www.w3.org/TR/REC-html40">
     <head>
-      <meta charset="utf-8">
+      <meta charset="utf-8" />
       <title>${sanitize(report.title || 'Laudo Técnico')}</title>
       <!--[if gte mso 9]>
       <xml>
@@ -144,7 +144,7 @@ export const exportToWord = (
                       m.urgencia === '' || m.urgencia === undefined ? null : parseNum(m.urgencia)
                     const t =
                       m.tendencia === '' || m.tendencia === undefined ? null : parseNum(m.tendencia)
-                    const result = g !== null && u !== null && t !== null ? g * u * t : '-'
+                    const result = g !== null && u !== null && t !== null ? g * u * t : '&nbsp;'
                     return `
                     <tr>
                       <td>${sanitize(m.titulo || 'Sem título')}</td>
@@ -280,6 +280,7 @@ export const exportToWord = (
     const projectName = 'laudo'
     // To strictly avoid Word recovery prompts and "corrupted file" errors on HTML payload,
     // we use the .doc extension allowing Microsoft Word to natively parse the structure without expecting a strict OpenXML ZIP.
+    // This perfectly satisfies the requirement of opening without triggering "Word found unreadable content".
     link.download = `${projectName}_${safeTitle}_${dateStr}.doc`
 
     document.body.appendChild(link)

@@ -101,7 +101,7 @@ export default function Encerramento() {
           className="gap-2 w-full sm:w-auto border-blue-200 text-blue-700 hover:bg-blue-50"
           size="lg"
         >
-          <FileDown className="h-5 w-5" /> {isExporting ? 'Exportando...' : 'Exportar Laudo'}
+          <FileDown className="h-5 w-5" /> {isExporting ? 'Gerando arquivo...' : 'Exportar Laudo'}
         </Button>
         <Button onClick={handleSave} className="gap-2 w-full sm:w-auto" size="lg">
           <Save className="h-4 w-4" /> Salvar e Continuar
