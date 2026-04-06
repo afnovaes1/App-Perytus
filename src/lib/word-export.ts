@@ -78,6 +78,21 @@ export const exportToWord = (
       parseNum(estimativa.tratamento) +
       parseNum(estimativa.consolidacao)
 
+    const fotosPorLocal: Record<string, string[]> = {}
+    let totalFotos = 0
+    manifestacoes.forEach((m: any) => {
+      const local = m.local || m.localizacao || 'Não especificado'
+      if (!fotosPorLocal[local]) fotosPorLocal[local] = []
+      if (Array.isArray(m.fotos) && m.fotos.length > 0) {
+        m.fotos.forEach((f: string) => {
+          if (f) {
+            fotosPorLocal[local].push(f)
+            totalFotos++
+          }
+        })
+      }
+    })
+
     const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office"
       xmlns:w="urn:schemas-microsoft-com:office:word"
       xmlns="http://www.w3.org/TR/REC-html40">
@@ -98,6 +113,7 @@ export const exportToWord = (
         h1 { font-size: 16pt; color: #2b579a; font-weight: bold; text-align: center; margin-bottom: 24px; }
         h2 { font-size: 14pt; color: #2b579a; margin-top: 24px; font-weight: bold; border-bottom: 1px solid #2b579a; padding-bottom: 4px; }
         h3 { font-size: 12pt; color: #333; margin-top: 16px; font-weight: bold; }
+        h4 { font-size: 11pt; color: #555; margin-top: 12px; font-weight: bold; }
         p { margin-bottom: 10px; }
         table { border-collapse: collapse; width: 100%; margin: 15px 0; }
         th, td { border: 1px solid #000; padding: 8px; text-align: left; }
@@ -113,24 +129,82 @@ export const exportToWord = (
     </head>
     <body>
       <h1>${sanitize(report.title || 'Laudo Técnico')}</h1>
-      <div class="header-info">
-        <p><span class="field-label">Data de Criação:</span> ${sanitize(
-          format(new Date(report.created || new Date()), 'dd/MM/yyyy'),
-        )}</p>
-      </div>
 
-      <h2>1. Síntese / Contexto</h2>
+      <h2>1. IDENTIFICAÇÃO DO DOCUMENTO</h2>
+      <p><strong>Classificação:</strong> ${sanitize(classificacao.tipo)}</p>
+      <p><strong>Responsável Técnico:</strong> ${sanitize(encerramento.responsabilidade)}</p>
+      <p><strong>Data:</strong> ${sanitize(format(new Date(report.created || new Date()), 'dd/MM/yyyy'))}</p>
+
+      <h2>2. OBJETIVO</h2>
+      <p>Este relatório tem por objetivo registrar as manifestações observadas, analisar tecnicamente as possíveis causas e apresentar diagnóstico, prognóstico e recomendações técnicas pertinentes.</p>
+
+      <h2>3. SÍNTESE DO CONTEXTO</h2>
       <p>${sanitize(identificacao.sintese)}</p>
 
-      <h2>2. Matriz GUT</h2>
+      <h2>4. METODOLOGIA</h2>
+      <p><strong>Procedimentos adotados:</strong> ${sanitize(metodologia.procedimentosAdotados)}</p>
+      <p><strong>Limitações:</strong> ${sanitize(metodologia.limitacoesInvestigacao)}</p>
+      <p><strong>Amplitude técnica:</strong> ${sanitize(metodologia.amplitudeTecnica)}</p>
+
+      <h2>5. EVIDÊNCIAS LEVANTADAS</h2>
+      <ul>
+        <li><strong>Monitoramento:</strong> ${sanitize(evidencias.monitoramento)}</li>
+        <li><strong>Eventos:</strong> ${sanitize(evidencias.eventos)}</li>
+        <li><strong>Evidências Associadas:</strong> ${sanitize(evidencias.associadas)}</li>
+      </ul>
+
+      <h2>6. MANIFESTAÇÕES TÉCNICAS</h2>
+      ${
+        manifestacoes.length > 0
+          ? manifestacoes
+              .map((m: any, i: number) => {
+                return `
+        <div style="margin-bottom: 20px;">
+          <h3>Manifestação ${i + 1}: ${sanitize(m.titulo || 'Sem título')}</h3>
+          <p><strong>6.1 Descrição</strong></p>
+          <ul>
+            <li><strong>Local:</strong> ${sanitize(m.local || m.localizacao)}</li>
+            <li><strong>Elemento:</strong> ${sanitize(m.titulo)}</li>
+            <li><strong>Intensidade:</strong> ${sanitize(m.intensidade)}</li>
+            <li><strong>Evolução:</strong> ${sanitize(m.evolucao)}</li>
+          </ul>
+          <p><strong>6.2 Caracterização</strong></p>
+          <p>${sanitize(m.descricao || m.observacoes)}</p>
+        </div>
+      `
+              })
+              .join('')
+          : '<p>Nenhuma manifestação registrada.</p>'
+      }
+
+      <h2>7. HIPÓTESES TÉCNICAS</h2>
+      <ul>
+        <li><strong>Hipótese principal:</strong> ${sanitize(hipoteses.principal?.descricao)}</li>
+        <li><strong>Fatores contribuintes possíveis:</strong> ${sanitize(hipoteses.principal?.criterios)}</li>
+        <li><strong>Grau de confiança:</strong> ${sanitize(hipoteses.principal?.confianca)}</li>
+      </ul>
+
+      <h2>8. ANÁLISE TÉCNICA</h2>
+      <p>${sanitize(metodologia.alcanceInterpretativo)}</p>
+
+      <h2>9. DIAGNÓSTICO</h2>
+      <p>${sanitize(consolidacao.diagnostico)}</p>
+
+      <h2>10. PROGNÓSTICO</h2>
+      <p>${sanitize(consolidacao.prognostico)}</p>
+
+      <h2>11. RECOMENDAÇÕES</h2>
+      <p>${sanitize(consolidacao.recomendacoes)}</p>
+
+      <h2>12. MATRIZ GUT (PRIORIZAÇÃO)</h2>
       <table class="gut-table">
         <thead>
           <tr>
             <th>Manifestação</th>
-            <th>Gravidade (G)</th>
-            <th>Urgência (U)</th>
-            <th>Tendência (T)</th>
-            <th>Índice (G×U×T)</th>
+            <th>G</th>
+            <th>U</th>
+            <th>T</th>
+            <th>Índice</th>
           </tr>
         </thead>
         <tbody>
@@ -161,15 +235,16 @@ export const exportToWord = (
         </tbody>
       </table>
 
-      <h2>3. Classificação do Documento</h2>
-      <p>Este documento é classificado como: <strong>${sanitize(classificacao.tipo)}</strong></p>
+      <h2>13. CLASSIFICAÇÃO TÉCNICA</h2>
+      <p><strong>Estado de desempenho:</strong> ${sanitize(classificacao.estadoDesempenho)}</p>
+      <p><strong>Prioridade:</strong> ${sanitize(classificacao.prioridade)}</p>
 
-      <h2>4. Estimativa de Esforço</h2>
+      <h2>14. ESTIMATIVA DE ESFORÇO TÉCNICO</h2>
       <table>
         <thead>
           <tr>
             <th>Atividade</th>
-            <th>Horas Estimadas</th>
+            <th>Horas</th>
           </tr>
         </thead>
         <tbody>
@@ -179,89 +254,59 @@ export const exportToWord = (
           <tr><td>Tratamento de Imagens</td><td>${displayNum(estimativa.tratamento)}</td></tr>
           <tr><td>Consolidação / Redação</td><td>${displayNum(estimativa.consolidacao)}</td></tr>
           <tr>
-            <th style="background-color: #d9e1f2;">Total de Esforço</th>
+            <th style="background-color: #d9e1f2;">Total</th>
             <th style="background-color: #d9e1f2;">${effortTotal} horas</th>
           </tr>
         </tbody>
       </table>
 
-      <h2>5. Termos e Definições Técnicas de Referência</h2>
-      <p>${sanitize(metodologia.alcanceInterpretativo)}</p>
+      <h2>15. LIMITAÇÕES DO ESTUDO</h2>
+      <ul>
+        ${consolidacao.limitacoes ? `<li>${sanitize(consolidacao.limitacoes)}</li>` : ''}
+        ${metodologia.lacunasMetodologicas ? `<li>${sanitize(metodologia.lacunasMetodologicas)}</li>` : ''}
+        ${!consolidacao.limitacoes && !metodologia.lacunasMetodologicas ? '<li>Nenhuma limitação registrada.</li>' : ''}
+      </ul>
 
-      <h2>6. Evidências</h2>
-      <p><strong>Monitoramento:</strong> ${sanitize(evidencias.monitoramento)}</p>
-      <p><strong>Eventos:</strong> ${sanitize(evidencias.eventos)}</p>
-      <p><strong>Evidências Associadas:</strong> ${sanitize(evidencias.associadas)}</p>
-
-      <h2>7. Hipóteses</h2>
-      <p><strong>Descrição:</strong> ${sanitize(hipoteses.principal?.descricao)}</p>
-      <p><strong>Critérios:</strong> ${sanitize(hipoteses.principal?.criterios)}</p>
-      <p><strong>Grau de Confiança:</strong> ${sanitize(hipoteses.principal?.confianca)}</p>
-
-      <h2>8. Consolidação</h2>
-      <h3>8.1 Diagnóstico</h3>
-      <p>${sanitize(consolidacao.diagnostico)}</p>
-      <h3>8.2 Prognóstico</h3>
-      <p>${sanitize(consolidacao.prognostico)}</p>
-      <h3>8.3 Recomendações</h3>
-      <p>${sanitize(consolidacao.recomendacoes)}</p>
-      <h3>8.4 Limitações</h3>
-      <p>${sanitize(consolidacao.limitacoes)}</p>
-
-      <h2>9. Manifestações Técnicas</h2>
+      <h2>16. DOCUMENTOS E ANEXOS</h2>
+      <p><strong>Quantidade de Fotos:</strong> ${totalFotos || sanitize(anexos.quantidadeFotos) || 0}</p>
+      <p><strong>Organização:</strong> ${sanitize(anexos.organizacaoFotos)}</p>
       ${
-        manifestacoes.length > 0
-          ? manifestacoes
-              .map((m: any, i: number) => {
-                const fotosHtml =
-                  Array.isArray(m.fotos) && m.fotos.length > 0
-                    ? m.fotos
-                        .map((f: string) => {
-                          if (!f) return ''
-                          const safeUrl = f.replace(/"/g, '&quot;')
-                          return `
-                  <div class="img-container">
-                    <img src="${safeUrl}" alt="Registro fotográfico" />
-                  </div>
-                `
-                        })
-                        .join('')
-                    : ''
-
+        Object.keys(fotosPorLocal).length > 0
+          ? Object.entries(fotosPorLocal)
+              .map(([local, fotos]) => {
+                const fotosHtml = fotos
+                  .map((f: string) => {
+                    const safeUrl = f.replace(/"/g, '&quot;')
+                    return `
+                    <div class="img-container">
+                      <img src="${safeUrl}" alt="Registro fotográfico em ${sanitize(local)}" />
+                    </div>
+                  `
+                  })
+                  .join('')
                 return `
-        <h3>9.${i + 1} ${sanitize(m.titulo || 'Manifestação')}</h3>
-        <p><span class="field-label">Local:</span> ${sanitize(m.local || m.localizacao)}</p>
-        <p><span class="field-label">Intensidade:</span> ${sanitize(m.intensidade)}</p>
-        <p><span class="field-label">Evolução:</span> ${sanitize(m.evolucao)}</p>
-        <p><span class="field-label">Descrição:</span> ${sanitize(m.descricao || m.observacoes)}</p>
-        ${fotosHtml}
-      `
+                <h3>Ambiente: ${sanitize(local)}</h3>
+                ${fotosHtml}
+              `
               })
               .join('')
-          : '<p>Nenhuma manifestação registrada.</p>'
+          : '<p>Nenhuma foto anexada.</p>'
       }
 
-      <h2>10. Encerramento</h2>
+      <h2>17. REFERÊNCIAS</h2>
+      <ul>
+        <li>ABNT NBR 13752 – Perícias de engenharia</li>
+        <li>ABNT NBR 16747 – Inspeção predial</li>
+        <li>ABNT NBR 6122 – Fundações</li>
+        <li>Literatura técnica de patologia das construções</li>
+      </ul>
+      ${referencias.texto ? `<p>${sanitize(referencias.texto)}</p>` : ''}
+
+      <h2>18. DECLARAÇÃO DE RESPONSABILIDADE</h2>
+      <p>O presente relatório foi elaborado com apoio da plataforma PERYTUS, ferramenta de organização técnica. As análises, conclusões e responsabilidade técnica são exclusivamente do profissional signatário.</p>
+
+      <h2>19. ENCERRAMENTO</h2>
       <p>${sanitize(encerramento.texto)}</p>
-
-      <h2>11. Declaração de Responsabilidade Técnica</h2>
-      <p><strong>Responsável Técnico:</strong> ${sanitize(encerramento.responsabilidade)}</p>
-
-      <h2>12. Metodologia / Classificação Metodológica</h2>
-      <p><strong>Procedimentos Adotados:</strong> ${sanitize(metodologia.procedimentosAdotados)}</p>
-      <p><strong>Limitações da Investigação:</strong> ${sanitize(metodologia.limitacoesInvestigacao)}</p>
-      <p><strong>Lacunas Metodológicas:</strong> ${sanitize(metodologia.lacunasMetodologicas)}</p>
-      <p><strong>Amplitude Técnica:</strong> ${sanitize(metodologia.amplitudeTecnica)}</p>
-      <p><strong>Estado Aparente de Desempenho:</strong> ${sanitize(classificacao.estadoDesempenho)}</p>
-      <p><strong>Classificação de Prioridade:</strong> ${sanitize(classificacao.prioridade)}</p>
-
-      <h2>13. Documentos e Anexos</h2>
-      <p><strong>Tipos de Anexo:</strong> ${sanitize(anexos.tipos)}</p>
-      <p><strong>Quantidade de Fotos:</strong> ${sanitize(anexos.quantidadeFotos)}</p>
-      <p><strong>Organização:</strong> ${sanitize(anexos.organizacaoFotos)}</p>
-
-      <h2>14. Referências</h2>
-      <p>${sanitize(referencias.texto)}</p>
       
     </body>
     </html>`
