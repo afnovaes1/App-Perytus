@@ -42,14 +42,25 @@ const parseGutNum = (val: any): number | null => {
 }
 
 const getGutField = (m: any, field: string): any => {
-  if (m[field] !== undefined) return m[field]
-  if (m.gut && m.gut[field] !== undefined) return m.gut[field]
-  if (m.matrizGut && m.matrizGut[field] !== undefined) return m.matrizGut[field]
+  if (!m) return undefined
 
-  const short = field.charAt(0)
-  if (m[short] !== undefined) return m[short]
-  if (m.gut && m.gut[short] !== undefined) return m.gut[short]
-  if (m.matrizGut && m.matrizGut[short] !== undefined) return m.matrizGut[short]
+  const short = field.charAt(0).toLowerCase()
+  const lower = field.toLowerCase()
+  const cap = field.charAt(0).toUpperCase() + field.slice(1)
+  const shortCap = short.toUpperCase()
+
+  const keysToTry = [lower, short, cap, shortCap]
+  const containers = [m, m.gut, m.matrizGut, m.matriz]
+
+  for (const container of containers) {
+    if (container && typeof container === 'object') {
+      for (const key of keysToTry) {
+        if (container[key] !== undefined && container[key] !== null && container[key] !== '') {
+          return container[key]
+        }
+      }
+    }
+  }
 
   return undefined
 }
@@ -183,11 +194,11 @@ export const exportToWord = (
               .map((m: any, i: number) => {
                 return `
         <div style="margin-bottom: 20px;">
-          <h3>Manifestação ${i + 1}: ${sanitize(m.titulo || 'Sem título')}</h3>
+          <h3>Manifestação ${i + 1}: ${sanitize(m.titulo || m.nome || m.elemento || 'Sem título')}</h3>
           <p><strong>6.1 Descrição</strong></p>
           <ul>
             <li><strong>Local:</strong> ${sanitize(m.local || m.localizacao)}</li>
-            <li><strong>Elemento:</strong> ${sanitize(m.titulo)}</li>
+            <li><strong>Elemento:</strong> ${sanitize(m.titulo || m.nome || m.elemento || 'Sem título')}</li>
             <li><strong>Intensidade:</strong> ${sanitize(m.intensidade)}</li>
             <li><strong>Evolução:</strong> ${sanitize(m.evolucao)}</li>
           </ul>
@@ -246,7 +257,7 @@ export const exportToWord = (
                     const result = g !== null && u !== null && t !== null ? g * u * t : '&nbsp;'
                     return `
                     <tr>
-                      <td>${sanitize(m.titulo || 'Sem título')}</td>
+                      <td>${sanitize(m.titulo || m.nome || m.elemento || 'Sem título')}</td>
                       <td>${g !== null ? g : '&nbsp;'}</td>
                       <td>${u !== null ? u : '&nbsp;'}</td>
                       <td>${t !== null ? t : '&nbsp;'}</td>
