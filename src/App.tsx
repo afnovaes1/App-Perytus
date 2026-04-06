@@ -1,14 +1,19 @@
-/* Main App Component - Handles routing (using react-router-dom), query client and other providers - use this file to add all routes */
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { ReportProvider } from '@/context/ReportContext'
+
+import Layout from './components/Layout'
 import Index from './pages/Index'
 import NotFound from './pages/NotFound'
-import Layout from './components/Layout'
-
-// ONLY IMPORT AND RENDER WORKING PAGES, NEVER ADD PLACEHOLDER COMPONENTS OR PAGES IN THIS FILE
-// AVOID REMOVING ANY CONTEXT PROVIDERS FROM THIS FILE (e.g. TooltipProvider, Toaster, Sonner)
+import { WizardLayout } from './components/WizardLayout'
+import Identificacao from './pages/laudo/Identificacao'
+import Manifestacoes from './pages/laudo/Manifestacoes'
+import Evidencias from './pages/laudo/Evidencias'
+import Hipoteses from './pages/laudo/Hipoteses'
+import Consolidacao from './pages/laudo/Consolidacao'
+import Metodologia from './pages/laudo/Metodologia'
 
 const App = () => (
   <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
@@ -18,8 +23,25 @@ const App = () => (
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES MUST BE ADDED HERE */}
+
+          <Route
+            path="/laudo/novo"
+            element={
+              <ReportProvider>
+                <WizardLayout />
+              </ReportProvider>
+            }
+          >
+            <Route index element={<Navigate to="identificacao" replace />} />
+            <Route path="identificacao" element={<Identificacao />} />
+            <Route path="manifestacoes" element={<Manifestacoes />} />
+            <Route path="evidencias" element={<Evidencias />} />
+            <Route path="hipoteses" element={<Hipoteses />} />
+            <Route path="consolidacao" element={<Consolidacao />} />
+            <Route path="metodologia" element={<Metodologia />} />
+          </Route>
         </Route>
+
         <Route path="*" element={<NotFound />} />
       </Routes>
     </TooltipProvider>
