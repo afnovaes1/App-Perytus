@@ -42,7 +42,11 @@ export type ReportData = {
     limitacoes: string
   }
   metodologia: {
-    normas: string
+    procedimentosAdotados: string[]
+    detalhamentoProcedimentos: string
+    limitacoesInvestigacao: string[]
+    descricaoLimitacoes: string
+    alcanceInterpretativo: string
   }
 }
 
@@ -54,7 +58,13 @@ const defaultData: ReportData = {
     lista: [{ id: '1', descricao: '', criterios: '', confianca: '', principal: true }],
   },
   consolidacao: { diagnostico: '', prognostico: '', recomendacoes: '', limitacoes: '' },
-  metodologia: { normas: '' },
+  metodologia: {
+    procedimentosAdotados: [],
+    detalhamentoProcedimentos: '',
+    limitacoesInvestigacao: [],
+    descricaoLimitacoes: '',
+    alcanceInterpretativo: '',
+  },
 }
 
 type ReportContextType = {
