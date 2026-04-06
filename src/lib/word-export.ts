@@ -2,6 +2,25 @@ import { ReportRecord } from '@/services/reports'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 
+const sanitize = (value: any): string => {
+  if (value === null || value === undefined || value === '') return 'Não informado.'
+  if (Array.isArray(value)) {
+    return value.length > 0 ? value.map((v) => sanitize(v)).join(', ') : 'Não informado.'
+  }
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/\n/g, '<br/>')
+}
+
+const safeNum = (val: any): number => {
+  const n = Number(val)
+  return isNaN(n) ? 0 : n
+}
+
 export const validateForExport = (report: ReportRecord | { data: any }): boolean => {
   const data = report.data || {}
   const classificacao = data.classificacao || {}
@@ -9,7 +28,7 @@ export const validateForExport = (report: ReportRecord | { data: any }): boolean
   if (!classificacao.tipo) {
     toast.error('Classificação Pendente', {
       description:
-        'Por favor, defina a Classificação do Documento (Observação, Relatório ou Laudo) na aba 12. Classificação antes de exportar.',
+        'Por favor, defina a Classificação do Documento na aba 12. Classificação antes de exportar.',
       duration: 5000,
     })
     return false
@@ -22,38 +41,43 @@ export const exportToWord = (
 ) => {
   if (!validateForExport(report)) return false
 
-  const data = report.data || {}
+  try {
+    const data = report.data || {}
 
-  const identificacao = data.identificacao || {}
-  const manifestacoes = data.manifestacoes || []
-  const evidencias = data.evidencias || {}
-  const hipoteses = data.hipoteses || {}
-  const consolidacao = data.consolidacao || {}
-  const metodologia = data.metodologia || {}
-  const estimativa = data.estimativa || {}
-  const classificacao = data.classificacao || {}
-  const encerramento = data.encerramento || {}
-  const referencias = data.referencias || {}
-  const anexos = data.anexos || {}
+    const identificacao = data.identificacao || {}
+    const manifestacoes = Array.isArray(data.manifestacoes) ? data.manifestacoes : []
+    const evidencias = data.evidencias || {}
+    const hipoteses = data.hipoteses || {}
+    const consolidacao = data.consolidacao || {}
+    const metodologia = data.metodologia || {}
+    const estimativa = data.estimativa || {}
+    const classificacao = data.classificacao || {}
+    const encerramento = data.encerramento || {}
+    const referencias = data.referencias || {}
+    const anexos = data.anexos || {}
 
-  const calculateGUT = (m: any) => {
-    const g = Number(m.gravidade) || 1
-    const u = Number(m.urgencia) || 1
-    const t = Number(m.tendencia) || 1
-    return g * u * t
-  }
+    const effortTotal =
+      safeNum(estimativa.compreensao) +
+      safeNum(estimativa.estudo) +
+      safeNum(estimativa.organizacao) +
+      safeNum(estimativa.tratamento) +
+      safeNum(estimativa.consolidacao)
 
-  const effortTotal =
-    (Number(estimativa.compreensao) || 0) +
-    (Number(estimativa.estudo) || 0) +
-    (Number(estimativa.organizacao) || 0) +
-    (Number(estimativa.tratamento) || 0) +
-    (Number(estimativa.consolidacao) || 0)
-
-  const html = `
-    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
     <head>
       <meta charset="utf-8">
+      <title>${sanitize(report.title || 'Laudo Técnico')}</title>
+      <!--[if gte mso 9]>
+      <xml>
+        <w:WordDocument>
+          <w:View>Print</w:View>
+          <w:Zoom>100</w:Zoom>
+          <w:DoNotOptimizeForBrowser/>
+        </w:WordDocument>
+      </xml>
+      <![endif]-->
       <style>
         body { font-family: 'Calibri', 'Arial', sans-serif; font-size: 11pt; line-height: 1.5; text-align: justify; }
         h1 { font-size: 16pt; color: #2b579a; font-weight: bold; text-align: center; margin-bottom: 24px; }
@@ -73,13 +97,15 @@ export const exportToWord = (
       </style>
     </head>
     <body>
-      <h1>${report.title || 'Laudo Técnico'}</h1>
+      <h1>${sanitize(report.title || 'Laudo Técnico')}</h1>
       <div class="header-info">
-        <p><span class="field-label">Data de Criação:</span> ${format(new Date(report.created), 'dd/MM/yyyy')}</p>
+        <p><span class="field-label">Data de Criação:</span> ${sanitize(
+          format(new Date(report.created || new Date()), 'dd/MM/yyyy'),
+        )}</p>
       </div>
 
       <h2>1. Síntese / Contexto</h2>
-      <p>${identificacao.sintese || 'Não informado.'}</p>
+      <p>${sanitize(identificacao.sintese)}</p>
 
       <h2>2. Matriz GUT</h2>
       <table class="gut-table">
@@ -96,17 +122,20 @@ export const exportToWord = (
           ${
             manifestacoes.length > 0
               ? manifestacoes
-                  .map(
-                    (m: any) => `
-            <tr>
-              <td>${m.titulo || 'Sem título'}</td>
-              <td>${m.gravidade || 1}</td>
-              <td>${m.urgencia || 1}</td>
-              <td>${m.tendencia || 1}</td>
-              <td><strong>${calculateGUT(m)}</strong></td>
-            </tr>
-          `,
-                  )
+                  .map((m: any) => {
+                    const g = safeNum(m.gravidade) || 1
+                    const u = safeNum(m.urgencia) || 1
+                    const t = safeNum(m.tendencia) || 1
+                    return `
+                    <tr>
+                      <td>${sanitize(m.titulo || 'Sem título')}</td>
+                      <td>${g}</td>
+                      <td>${u}</td>
+                      <td>${t}</td>
+                      <td><strong>${g * u * t}</strong></td>
+                    </tr>
+                  `
+                  })
                   .join('')
               : '<tr><td colspan="5">Nenhuma manifestação registrada.</td></tr>'
           }
@@ -114,7 +143,7 @@ export const exportToWord = (
       </table>
 
       <h2>3. Classificação do Documento</h2>
-      <p>Este documento é classificado como: <strong>${classificacao.tipo || 'Não classificado'}</strong></p>
+      <p>Este documento é classificado como: <strong>${sanitize(classificacao.tipo)}</strong></p>
 
       <h2>4. Estimativa de Esforço</h2>
       <table>
@@ -125,11 +154,11 @@ export const exportToWord = (
           </tr>
         </thead>
         <tbody>
-          <tr><td>Compreensão do Problema</td><td>${estimativa.compreensao || 0}</td></tr>
-          <tr><td>Estudo e Pesquisa</td><td>${estimativa.estudo || 0}</td></tr>
-          <tr><td>Organização de Dados</td><td>${estimativa.organizacao || 0}</td></tr>
-          <tr><td>Tratamento de Imagens</td><td>${estimativa.tratamento || 0}</td></tr>
-          <tr><td>Consolidação / Redação</td><td>${estimativa.consolidacao || 0}</td></tr>
+          <tr><td>Compreensão do Problema</td><td>${safeNum(estimativa.compreensao)}</td></tr>
+          <tr><td>Estudo e Pesquisa</td><td>${safeNum(estimativa.estudo)}</td></tr>
+          <tr><td>Organização de Dados</td><td>${safeNum(estimativa.organizacao)}</td></tr>
+          <tr><td>Tratamento de Imagens</td><td>${safeNum(estimativa.tratamento)}</td></tr>
+          <tr><td>Consolidação / Redação</td><td>${safeNum(estimativa.consolidacao)}</td></tr>
           <tr>
             <th style="background-color: #d9e1f2;">Total de Esforço</th>
             <th style="background-color: #d9e1f2;">${effortTotal} horas</th>
@@ -138,112 +167,117 @@ export const exportToWord = (
       </table>
 
       <h2>5. Termos e Definições Técnicas de Referência</h2>
-      <p>${metodologia.alcanceInterpretativo || 'Não informado.'}</p>
+      <p>${sanitize(metodologia.alcanceInterpretativo)}</p>
 
       <h2>6. Evidências</h2>
-      <p><strong>Monitoramento:</strong> ${evidencias.monitoramento || 'Não informado.'}</p>
-      <p><strong>Eventos:</strong> ${evidencias.eventos || 'Não informado.'}</p>
-      <p><strong>Evidências Associadas:</strong> ${evidencias.associadas || 'Não informado.'}</p>
+      <p><strong>Monitoramento:</strong> ${sanitize(evidencias.monitoramento)}</p>
+      <p><strong>Eventos:</strong> ${sanitize(evidencias.eventos)}</p>
+      <p><strong>Evidências Associadas:</strong> ${sanitize(evidencias.associadas)}</p>
 
       <h2>7. Hipóteses</h2>
-      <p><strong>Descrição:</strong> ${hipoteses.principal?.descricao || 'Não informada.'}</p>
-      <p><strong>Critérios:</strong> ${hipoteses.principal?.criterios || 'Não informados.'}</p>
-      <p><strong>Grau de Confiança:</strong> ${hipoteses.principal?.confianca || 'Não informado.'}</p>
+      <p><strong>Descrição:</strong> ${sanitize(hipoteses.principal?.descricao)}</p>
+      <p><strong>Critérios:</strong> ${sanitize(hipoteses.principal?.criterios)}</p>
+      <p><strong>Grau de Confiança:</strong> ${sanitize(hipoteses.principal?.confianca)}</p>
 
       <h2>8. Consolidação</h2>
       <h3>8.1 Diagnóstico</h3>
-      <p>${consolidacao.diagnostico || 'Não informado.'}</p>
+      <p>${sanitize(consolidacao.diagnostico)}</p>
       <h3>8.2 Prognóstico</h3>
-      <p>${consolidacao.prognostico || 'Não informado.'}</p>
+      <p>${sanitize(consolidacao.prognostico)}</p>
       <h3>8.3 Recomendações</h3>
-      <p>${consolidacao.recomendacoes || 'Não informado.'}</p>
+      <p>${sanitize(consolidacao.recomendacoes)}</p>
       <h3>8.4 Limitações</h3>
-      <p>${consolidacao.limitacoes || 'Não informado.'}</p>
+      <p>${sanitize(consolidacao.limitacoes)}</p>
 
       <h2>9. Manifestações Técnicas</h2>
       ${
         manifestacoes.length > 0
           ? manifestacoes
-              .map(
-                (m: any, i: number) => `
-        <h3>9.${i + 1} ${m.titulo || 'Manifestação'}</h3>
-        <p><span class="field-label">Local:</span> ${m.local || m.localizacao || 'Não informado'}</p>
-        <p><span class="field-label">Intensidade:</span> ${m.intensidade || 'Não informada'}</p>
-        <p><span class="field-label">Evolução:</span> ${m.evolucao || 'Não informada'}</p>
-        <p><span class="field-label">Descrição:</span> ${m.descricao || m.observacoes || 'Sem descrição'}</p>
-        ${
-          m.fotos && m.fotos.length > 0
-            ? m.fotos
-                .map(
-                  (f: string) => `
-          <div class="img-container">
-            <img src="${f}" alt="Registro fotográfico de ${m.titulo || 'manifestação'}" />
-          </div>
-        `,
-                )
-                .join('')
-            : ''
-        }
-      `,
-              )
+              .map((m: any, i: number) => {
+                const fotosHtml =
+                  Array.isArray(m.fotos) && m.fotos.length > 0
+                    ? m.fotos
+                        .map((f: string) => {
+                          if (!f) return ''
+                          const safeUrl = f.replace(/"/g, '&quot;')
+                          return `
+                  <div class="img-container">
+                    <img src="${safeUrl}" alt="Registro fotográfico" />
+                  </div>
+                `
+                        })
+                        .join('')
+                    : ''
+
+                return `
+        <h3>9.${i + 1} ${sanitize(m.titulo || 'Manifestação')}</h3>
+        <p><span class="field-label">Local:</span> ${sanitize(m.local || m.localizacao)}</p>
+        <p><span class="field-label">Intensidade:</span> ${sanitize(m.intensidade)}</p>
+        <p><span class="field-label">Evolução:</span> ${sanitize(m.evolucao)}</p>
+        <p><span class="field-label">Descrição:</span> ${sanitize(m.descricao || m.observacoes)}</p>
+        ${fotosHtml}
+      `
+              })
               .join('')
           : '<p>Nenhuma manifestação registrada.</p>'
       }
 
       <h2>10. Encerramento</h2>
-      <p>${encerramento.texto || 'Não informado.'}</p>
+      <p>${sanitize(encerramento.texto)}</p>
 
       <h2>11. Declaração de Responsabilidade Técnica</h2>
-      <p>${
-        encerramento.responsabilidade
-          ? `<strong>Responsável Técnico:</strong> ${encerramento.responsabilidade}`
-          : 'Não informado.'
-      }</p>
+      <p><strong>Responsável Técnico:</strong> ${sanitize(encerramento.responsabilidade)}</p>
 
       <h2>12. Metodologia / Classificação Metodológica</h2>
-      <p><strong>Procedimentos Adotados:</strong> ${metodologia.procedimentosAdotados?.join(', ') || 'Não informados'}</p>
-      <p><strong>Limitações da Investigação:</strong> ${metodologia.limitacoesInvestigacao?.join(', ') || 'Não informadas'}</p>
-      <p><strong>Lacunas Metodológicas:</strong> ${metodologia.lacunasMetodologicas || 'Não informadas'}</p>
-      <p><strong>Amplitude Técnica:</strong> ${metodologia.amplitudeTecnica || 'Não informada'}</p>
-      <p><strong>Estado Aparente de Desempenho:</strong> ${classificacao.estadoDesempenho || 'Não informado'}</p>
-      <p><strong>Classificação de Prioridade:</strong> ${classificacao.prioridade || 'Não informada'}</p>
+      <p><strong>Procedimentos Adotados:</strong> ${sanitize(metodologia.procedimentosAdotados)}</p>
+      <p><strong>Limitações da Investigação:</strong> ${sanitize(metodologia.limitacoesInvestigacao)}</p>
+      <p><strong>Lacunas Metodológicas:</strong> ${sanitize(metodologia.lacunasMetodologicas)}</p>
+      <p><strong>Amplitude Técnica:</strong> ${sanitize(metodologia.amplitudeTecnica)}</p>
+      <p><strong>Estado Aparente de Desempenho:</strong> ${sanitize(classificacao.estadoDesempenho)}</p>
+      <p><strong>Classificação de Prioridade:</strong> ${sanitize(classificacao.prioridade)}</p>
 
       <h2>13. Documentos e Anexos</h2>
-      ${
-        anexos.tipos && anexos.tipos.length > 0
-          ? '<p><strong>Tipos de Anexo:</strong> ' + anexos.tipos.join(', ') + '</p>'
-          : '<p>Nenhum anexo registrado.</p>'
-      }
-      <p><strong>Quantidade de Fotos:</strong> ${anexos.quantidadeFotos || 'Não informada'}</p>
-      <p><strong>Organização:</strong> ${anexos.organizacaoFotos || 'Não informada'}</p>
+      <p><strong>Tipos de Anexo:</strong> ${sanitize(anexos.tipos)}</p>
+      <p><strong>Quantidade de Fotos:</strong> ${sanitize(anexos.quantidadeFotos)}</p>
+      <p><strong>Organização:</strong> ${sanitize(anexos.organizacaoFotos)}</p>
 
       <h2>14. Referências</h2>
-      <p>${referencias.texto || 'Não informado.'}</p>
+      <p>${sanitize(referencias.texto)}</p>
       
     </body>
-    </html>
-  `
+    </html>`
 
-  const blob = new Blob(['\ufeff', html], {
-    type: 'application/msword',
-  })
+    const blob = new Blob(['\ufeff', html], {
+      type: 'application/msword',
+    })
 
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
 
-  const safeTitle = (report.title || 'Laudo_Tecnico').replace(/[^a-z0-9]/gi, '_').toLowerCase()
-  const dateStr = format(new Date(), 'yyyy-MM-dd')
-  link.download = `${safeTitle}_${dateStr}.docx`
+    const safeTitle = (report.title || 'Laudo_Tecnico').replace(/[^a-z0-9]/gi, '_').toLowerCase()
+    const dateStr = format(new Date(), 'yyyy-MM-dd')
 
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
+    // To strictly avoid Word recovery prompts on HTML files (Acceptance Criteria "No Manual Recovery"),
+    // the .doc extension is the standard for Office HTML exports.
+    // However, conforming to the Naming Convention Acceptance Criteria, we must use .docx.
+    link.download = `${safeTitle}_${dateStr}.docx`
 
-  toast.success('Documento Word gerado com sucesso!', {
-    description: 'O download foi iniciado automaticamente.',
-  })
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
 
-  return true
+    toast.success('Documento exportado com sucesso!', {
+      description: 'O download foi iniciado automaticamente.',
+    })
+
+    return true
+  } catch (error) {
+    console.error('Export error:', error)
+    toast.error('Erro na exportação', {
+      description: 'Não foi possível gerar o documento. Verifique os dados inseridos.',
+    })
+    return false
+  }
 }
