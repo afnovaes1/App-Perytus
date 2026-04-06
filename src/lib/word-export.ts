@@ -7,14 +7,17 @@ const sanitize = (value: any): string => {
   if (Array.isArray(value)) {
     return value.length > 0 ? value.map((v) => sanitize(v)).join(', ') : 'Não informado.'
   }
-  return String(value)
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/\n/g, '<br/>')
+  return (
+    String(value)
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/\n/g, '<br/>')
+  )
 }
 
 const parseNum = (val: any): number => {
