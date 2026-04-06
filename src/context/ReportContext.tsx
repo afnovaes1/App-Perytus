@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react'
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react'
+import { useParams } from 'react-router-dom'
+import { getReport, updateReport } from '@/services/reports'
 
 export type Manifestacao = {
   id: string
@@ -9,75 +11,22 @@ export type Manifestacao = {
   observacoes: string
 }
 
-export type HipoteseConfianca = 'alta' | 'media' | 'baixa' | ''
-
-export type Hipotese = {
-  id: string
-  descricao: string
-  criterios: string
-  confianca: HipoteseConfianca
-  principal: boolean
-}
-
-export type AnexosData = {
-  tipos: string[]
-  descricaoAdicional: string
-  relatorioFotografico: {
-    quantidade: string
-    organizacao: string
-    observacoes: string
-  }
-  observacoesGerais: string
-}
-
-export type ClassificacaoData = {
-  estadoDesempenho: {
-    classe: string
-    justificativa: string
-  }
-  prioridade: {
-    grau: string
-    fundamentacao: string
-  }
-  matrizGUT: {
-    gravidade: number | ''
-    urgencia: number | ''
-    tendencia: number | ''
-    justificativa: string
-  }
-}
-
-export type EncerramentoData = {
-  classificacaoDocumento: string
-  consideracoesFinais: string
-  responsabilidadeTecnica: boolean
-}
-
-export type EstimativaData = {
-  volumeDocumentos: string
-  quantidadeFotos: number | ''
-  horasAnaliseManual?: number | ''
-  horasImagensManual?: number | ''
-  horasRedacaoManual?: number | ''
-  horasRevisaoManual?: number | ''
-  valorHora?: number | ''
-}
-
 export type ReportData = {
   identificacao: {
     destinatario: string
     local: string
-    data: Date | undefined
+    data: string
+    codigo: string
+    sintese: string
   }
   manifestacoes: Manifestacao[]
   evidencias: {
     monitoramento: string
     eventos: string
     associadas: string
-    comparativos: string
   }
   hipoteses: {
-    lista: Hipotese[]
+    principal: { descricao: string; criterios: string; confianca: string }
   }
   consolidacao: {
     diagnostico: string
@@ -87,89 +36,115 @@ export type ReportData = {
   }
   metodologia: {
     procedimentosAdotados: string[]
-    detalhamentoProcedimentos: string
     limitacoesInvestigacao: string[]
-    descricaoLimitacoes: string
     alcanceInterpretativo: string
+    amplitudeTecnica: string
+    lacunasMetodologicas: string
   }
-  anexos: AnexosData
-  classificacao: ClassificacaoData
-  encerramento: EncerramentoData
-  estimativa: EstimativaData
+  estimativa: {
+    compreensao: number | ''
+    estudo: number | ''
+    organizacao: number | ''
+    tratamento: number | ''
+    consolidacao: number | ''
+  }
+  encerramento: {
+    texto: string
+  }
+  anexos: {
+    tipos: string[]
+    quantidadeFotos: number | ''
+    organizacaoFotos: string
+  }
+  classificacao: {
+    estadoDesempenho: string
+    prioridade: string
+    matrizGUT: {
+      gravidade: number | ''
+      urgencia: number | ''
+      tendencia: number | ''
+    }
+  }
+  referencias: {
+    texto: string
+    aceiteResponsabilidade: boolean
+  }
 }
 
-const defaultData: ReportData = {
-  identificacao: { destinatario: '', local: '', data: undefined },
+export const defaultData: ReportData = {
+  identificacao: { destinatario: '', local: '', data: '', codigo: '', sintese: '' },
   manifestacoes: [],
-  evidencias: { monitoramento: '', eventos: '', associadas: '', comparativos: '' },
-  hipoteses: {
-    lista: [{ id: '1', descricao: '', criterios: '', confianca: '', principal: true }],
-  },
+  evidencias: { monitoramento: '', eventos: '', associadas: '' },
+  hipoteses: { principal: { descricao: '', criterios: '', confianca: '' } },
   consolidacao: { diagnostico: '', prognostico: '', recomendacoes: '', limitacoes: '' },
   metodologia: {
     procedimentosAdotados: [],
-    detalhamentoProcedimentos: '',
     limitacoesInvestigacao: [],
-    descricaoLimitacoes: '',
     alcanceInterpretativo: '',
+    amplitudeTecnica: '',
+    lacunasMetodologicas: '',
   },
-  anexos: {
-    tipos: [],
-    descricaoAdicional: '',
-    relatorioFotografico: { quantidade: '', organizacao: '', observacoes: '' },
-    observacoesGerais: '',
-  },
+  estimativa: { compreensao: '', estudo: '', organizacao: '', tratamento: '', consolidacao: '' },
+  encerramento: { texto: '' },
+  anexos: { tipos: [], quantidadeFotos: '', organizacaoFotos: '' },
   classificacao: {
-    estadoDesempenho: { classe: '', justificativa: '' },
-    prioridade: { grau: '', fundamentacao: '' },
-    matrizGUT: { gravidade: '', urgencia: '', tendencia: '', justificativa: '' },
+    estadoDesempenho: '',
+    prioridade: '',
+    matrizGUT: { gravidade: '', urgencia: '', tendencia: '' },
   },
-  encerramento: {
-    classificacaoDocumento: '',
-    consideracoesFinais: '',
-    responsabilidadeTecnica: false,
-  },
-  estimativa: {
-    volumeDocumentos: 'elevado',
-    quantidadeFotos: 55,
-    horasAnaliseManual: '',
-    horasImagensManual: '',
-    horasRedacaoManual: '',
-    horasRevisaoManual: '',
-    valorHora: 350,
-  },
+  referencias: { texto: '', aceiteResponsabilidade: false },
 }
 
 type ReportContextType = {
   data: ReportData
   updateSection: <K extends keyof ReportData>(section: K, payload: Partial<ReportData[K]>) => void
   setManifestacoes: (manifestacoes: Manifestacao[]) => void
+  saveReport: () => Promise<void>
+  loading: boolean
 }
 
 const ReportContext = createContext<ReportContextType | undefined>(undefined)
 
 export const ReportProvider = ({ children }: { children: ReactNode }) => {
+  const { id } = useParams()
   const [data, setData] = useState<ReportData>(defaultData)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (id) {
+      getReport(id)
+        .then((record) => {
+          setData({ ...defaultData, ...(record.data || {}) })
+          setLoading(false)
+        })
+        .catch(() => setLoading(false))
+    } else {
+      setLoading(false)
+    }
+  }, [id])
 
   const updateSection = <K extends keyof ReportData>(
     section: K,
     payload: Partial<ReportData[K]>,
   ) => {
-    setData((prev) => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        ...payload,
-      },
-    }))
+    setData((prev) => ({ ...prev, [section]: { ...prev[section], ...payload } }))
   }
 
   const setManifestacoes = (manifestacoes: Manifestacao[]) => {
     setData((prev) => ({ ...prev, manifestacoes }))
   }
 
+  const saveReport = async () => {
+    if (id) {
+      await updateReport(id, {
+        title: data.identificacao.destinatario || 'Laudo sem título',
+        data,
+      })
+    }
+  }
+
   return (
-    <ReportContext.Provider value={{ data, updateSection, setManifestacoes }}>
+    <ReportContext.Provider value={{ data, updateSection, setManifestacoes, saveReport, loading }}>
       {children}
     </ReportContext.Provider>
   )
@@ -177,8 +152,6 @@ export const ReportProvider = ({ children }: { children: ReactNode }) => {
 
 export const useReport = () => {
   const context = useContext(ReportContext)
-  if (!context) {
-    throw new Error('useReport must be used within a ReportProvider')
-  }
+  if (!context) throw new Error('useReport must be used within a ReportProvider')
   return context
 }

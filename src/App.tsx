@@ -14,14 +14,16 @@ import Evidencias from './pages/laudo/Evidencias'
 import Hipoteses from './pages/laudo/Hipoteses'
 import Consolidacao from './pages/laudo/Consolidacao'
 import Metodologia from './pages/laudo/Metodologia'
+import Estimativa from './pages/laudo/Estimativa'
+import Encerramento from './pages/laudo/Encerramento'
 import Anexos from './pages/laudo/Anexos'
 import Classificacao from './pages/laudo/Classificacao'
-import Encerramento from './pages/laudo/Encerramento'
-import Estimativa from './pages/laudo/Estimativa'
+import Referencias from './pages/laudo/Referencias'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
 import { AuthProvider } from '@/hooks/use-auth'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import NewReportRedirect from './pages/laudo/NewReportRedirect'
 
 const App = () => (
   <AuthProvider>
@@ -36,9 +38,10 @@ const App = () => (
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
               <Route path="/" element={<Index />} />
+              <Route path="/laudo/novo" element={<NewReportRedirect />} />
 
               <Route
-                path="/laudo/novo"
+                path="/laudo/:id"
                 element={
                   <ReportProvider>
                     <WizardLayout />
@@ -52,10 +55,11 @@ const App = () => (
                 <Route path="hipoteses" element={<Hipoteses />} />
                 <Route path="consolidacao" element={<Consolidacao />} />
                 <Route path="metodologia" element={<Metodologia />} />
+                <Route path="estimativa" element={<Estimativa />} />
+                <Route path="encerramento" element={<Encerramento />} />
                 <Route path="anexos" element={<Anexos />} />
                 <Route path="classificacao" element={<Classificacao />} />
-                <Route path="encerramento" element={<Encerramento />} />
-                <Route path="estimativa" element={<Estimativa />} />
+                <Route path="referencias" element={<Referencias />} />
               </Route>
             </Route>
           </Route>

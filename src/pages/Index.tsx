@@ -1,24 +1,45 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { FileText, LogOut, Plus, Search } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { FileText, LogOut, Plus, Search, Trash2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/hooks/use-auth'
-
-const mockReports = [
-  { id: 'LD-2023-001', client: 'Condomínio Villa Verde', date: '10/10/2023', status: 'Concluído' },
-  { id: 'LD-2023-002', client: 'Edifício San Marco', date: '15/10/2023', status: 'Rascunho' },
-]
+import { getReports, deleteReport, ReportRecord } from '@/services/reports'
+import { format } from 'date-fns'
 
 export default function Index() {
   const navigate = useNavigate()
   const { signOut } = useAuth()
+  const [reports, setReports] = useState<ReportRecord[]>([])
+  const [search, setSearch] = useState('')
+
+  useEffect(() => {
+    loadReports()
+  }, [])
+
+  const loadReports = () => {
+    getReports().then(setReports).catch(console.error)
+  }
 
   const handleLogout = () => {
     signOut()
     navigate('/login')
   }
+
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (confirm('Tem certeza que deseja excluir este laudo?')) {
+      await deleteReport(id)
+      loadReports()
+    }
+  }
+
+  const filtered = reports.filter(
+    (r) =>
+      r.title.toLowerCase().includes(search.toLowerCase()) ||
+      r.id.toLowerCase().includes(search.toLowerCase()),
+  )
 
   return (
     <div className="container mx-auto py-12 max-w-5xl">
@@ -31,16 +52,14 @@ export default function Index() {
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" size="lg" className="gap-2" onClick={handleLogout}>
-            <LogOut className="h-5 w-5" />
-            Sair
+            <LogOut className="h-5 w-5" /> Sair
           </Button>
           <Button
             size="lg"
             className="gap-2 shadow-elevation"
-            onClick={() => navigate('/laudo/novo/identificacao')}
+            onClick={() => navigate('/laudo/novo')}
           >
-            <Plus className="h-5 w-5" />
-            Novo Laudo
+            <Plus className="h-5 w-5" /> Novo Laudo
           </Button>
         </div>
       </div>
@@ -53,45 +72,62 @@ export default function Index() {
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Buscar por cliente ou ID..."
+                placeholder="Buscar..."
                 className="pl-9 bg-white"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
               />
             </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">
           <div className="divide-y">
-            {mockReports.map((report) => (
-              <div
-                key={report.id}
-                className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 hover:bg-slate-50 transition-colors"
-              >
-                <div className="flex items-start gap-4 mb-4 sm:mb-0">
-                  <div className="bg-primary/10 p-3 rounded-lg">
-                    <FileText className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg text-slate-800">{report.client}</h3>
-                    <div className="flex items-center gap-3 text-sm text-slate-500 mt-1">
-                      <span className="font-mono bg-slate-100 px-2 py-0.5 rounded text-xs">
-                        {report.id}
-                      </span>
-                      <span>{report.date}</span>
+            {filtered.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground">Nenhum laudo encontrado.</div>
+            ) : (
+              filtered.map((report) => (
+                <div
+                  key={report.id}
+                  className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 hover:bg-slate-50 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/laudo/${report.id}`)}
+                >
+                  <div className="flex items-start gap-4 mb-4 sm:mb-0">
+                    <div className="bg-primary/10 p-3 rounded-lg">
+                      <FileText className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg text-slate-800">
+                        {report.title || 'Sem título'}
+                      </h3>
+                      <div className="flex items-center gap-3 text-sm text-slate-500 mt-1">
+                        <span className="font-mono bg-slate-100 px-2 py-0.5 rounded text-xs">
+                          {report.id}
+                        </span>
+                        <span>Criado em: {format(new Date(report.created), 'dd/MM/yyyy')}</span>
+                      </div>
                     </div>
                   </div>
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handleDelete(report.id, e)}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="ml-auto sm:ml-0"
+                      onClick={() => navigate(`/laudo/${report.id}`)}
+                    >
+                      Abrir
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-4 w-full sm:w-auto">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium w-fit ${report.status === 'Concluído' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}
-                  >
-                    {report.status}
-                  </span>
-                  <Button variant="outline" size="sm" className="ml-auto sm:ml-0">
-                    Abrir
-                  </Button>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </CardContent>
       </Card>

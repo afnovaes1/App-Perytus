@@ -1,5 +1,5 @@
 import React from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useParams } from 'react-router-dom'
 import {
   FileText,
   Eye,
@@ -10,78 +10,74 @@ import {
   Paperclip,
   BarChart2,
   Flag,
-  CheckCircle2,
   Calculator,
+  BookOpen,
 } from 'lucide-react'
 import { useReport } from '@/context/ReportContext'
 import { cn } from '@/lib/utils'
 
-const tabs = [
-  {
-    id: 'identificacao',
-    label: 'Identificação',
-    icon: FileText,
-    path: '/laudo/novo/identificacao',
-  },
-  { id: 'manifestacoes', label: 'Manifestações', icon: Eye, path: '/laudo/novo/manifestacoes' },
-  { id: 'evidencias', label: 'Evidências', icon: Search, path: '/laudo/novo/evidencias' },
-  { id: 'hipoteses', label: 'Hipóteses', icon: Lightbulb, path: '/laudo/novo/hipoteses' },
-  {
-    id: 'consolidacao',
-    label: 'Consolidação',
-    icon: CheckSquare,
-    path: '/laudo/novo/consolidacao',
-  },
-  { id: 'metodologia', label: 'Metodologia', icon: ClipboardList, path: '/laudo/novo/metodologia' },
-  { id: 'anexos', label: 'Anexos', icon: Paperclip, path: '/laudo/novo/anexos' },
-  {
-    id: 'classificacao',
-    label: 'Classificação',
-    icon: BarChart2,
-    path: '/laudo/novo/classificacao',
-  },
-  { id: 'encerramento', label: 'Encerramento', icon: Flag, path: '/laudo/novo/encerramento' },
-  { id: 'estimativa', label: 'Estimativa', icon: Calculator, path: '/laudo/novo/estimativa' },
-]
-
 export function WizardLayout() {
   const location = useLocation()
-  const { data } = useReport()
+  const { id } = useParams()
+  const { data, loading } = useReport()
 
-  const isCompleted = (tabId: string) => {
-    switch (tabId) {
-      case 'identificacao':
-        return !!(
-          data.identificacao.destinatario &&
-          data.identificacao.local &&
-          data.identificacao.data
-        )
-      case 'manifestacoes':
-        return data.manifestacoes.length > 0
-      case 'evidencias':
-        return Object.values(data.evidencias).some((v) => v.length > 0)
-      case 'hipoteses':
-        return !!data.hipoteses.texto
-      case 'consolidacao':
-        return !!data.consolidacao.conclusao
-      case 'metodologia':
-        return data.metodologia.procedimentosAdotados.length > 0
-      case 'anexos':
-        return data.anexos.tipos.length > 0 || !!data.anexos.descricaoAdicional
-      case 'classificacao':
-        return !!data.classificacao.estadoDesempenho.classe && !!data.classificacao.prioridade.grau
-      case 'encerramento':
-        return !!data.encerramento.consideracoesFinais && data.encerramento.responsabilidadeTecnica
-      case 'estimativa':
-        return false
-      default:
-        return false
-    }
+  const tabs = [
+    {
+      id: 'identificacao',
+      label: '1. Identificação',
+      icon: FileText,
+      path: `/laudo/${id}/identificacao`,
+    },
+    {
+      id: 'manifestacoes',
+      label: '2. Manifestações',
+      icon: Eye,
+      path: `/laudo/${id}/manifestacoes`,
+    },
+    { id: 'evidencias', label: '3. Evidências', icon: Search, path: `/laudo/${id}/evidencias` },
+    { id: 'hipoteses', label: '4. Hipóteses', icon: Lightbulb, path: `/laudo/${id}/hipoteses` },
+    {
+      id: 'consolidacao',
+      label: '5. Consolidação',
+      icon: CheckSquare,
+      path: `/laudo/${id}/consolidacao`,
+    },
+    {
+      id: 'metodologia',
+      label: '6-8. Metodologia',
+      icon: ClipboardList,
+      path: `/laudo/${id}/metodologia`,
+    },
+    { id: 'estimativa', label: '9. Estimativa', icon: Calculator, path: `/laudo/${id}/estimativa` },
+    {
+      id: 'encerramento',
+      label: '10. Encerramento',
+      icon: Flag,
+      path: `/laudo/${id}/encerramento`,
+    },
+    { id: 'anexos', label: '11. Anexos', icon: Paperclip, path: `/laudo/${id}/anexos` },
+    {
+      id: 'classificacao',
+      label: '12. Classificação',
+      icon: BarChart2,
+      path: `/laudo/${id}/classificacao`,
+    },
+    {
+      id: 'referencias',
+      label: '13-14. Referências',
+      icon: BookOpen,
+      path: `/laudo/${id}/referencias`,
+    },
+  ]
+
+  if (loading) {
+    return (
+      <div className="p-12 text-center text-muted-foreground">Carregando dados do laudo...</div>
+    )
   }
 
   return (
     <div className="min-h-screen flex flex-col bg-workspace">
-      {/* Top Navigation Area */}
       <div className="bg-white border-b shadow-sm sticky top-0 z-10">
         <div className="container mx-auto px-4">
           <div className="flex items-center py-4 mb-2">
@@ -89,13 +85,14 @@ export function WizardLayout() {
               <ClipboardList className="h-6 w-6" />
               <span>LaudoTech</span>
             </div>
+            <div className="ml-4 pl-4 border-l border-border text-sm font-medium text-slate-600 truncate max-w-md">
+              {data.identificacao.destinatario || 'Novo Laudo'}
+            </div>
           </div>
 
           <div className="flex overflow-x-auto hide-scrollbar">
             {tabs.map((tab) => {
               const active = location.pathname === tab.path
-              const completed = isCompleted(tab.id)
-
               return (
                 <NavLink
                   key={tab.id}
@@ -111,7 +108,6 @@ export function WizardLayout() {
                     className={cn('h-4 w-4', active ? 'text-primary' : 'text-muted-foreground')}
                   />
                   {tab.label}
-                  {completed && <CheckCircle2 className="h-4 w-4 text-green-600 ml-1" />}
                 </NavLink>
               )
             })}
@@ -119,7 +115,6 @@ export function WizardLayout() {
         </div>
       </div>
 
-      {/* Main Content Area */}
       <div className="flex-1 container mx-auto px-4 py-8 max-w-4xl">
         <Outlet />
       </div>
