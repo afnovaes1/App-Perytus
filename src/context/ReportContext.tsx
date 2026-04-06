@@ -47,6 +47,11 @@ export type ClassificacaoData = {
   }
 }
 
+export type EncerramentoData = {
+  volumeDocumentos: string
+  quantidadeFotos: number | ''
+}
+
 export type ReportData = {
   identificacao: {
     destinatario: string
@@ -78,6 +83,7 @@ export type ReportData = {
   }
   anexos: AnexosData
   classificacao: ClassificacaoData
+  encerramento: EncerramentoData
 }
 
 const defaultData: ReportData = {
@@ -105,6 +111,10 @@ const defaultData: ReportData = {
     estadoDesempenho: { classe: '', justificativa: '' },
     prioridade: { grau: '', fundamentacao: '' },
     matrizGUT: { gravidade: '', urgencia: '', tendencia: '', justificativa: '' },
+  },
+  encerramento: {
+    volumeDocumentos: 'elevado',
+    quantidadeFotos: 55,
   },
 }
 
