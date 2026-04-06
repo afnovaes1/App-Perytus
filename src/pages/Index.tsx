@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { FileText, LogOut, Plus, Search, Trash2 } from 'lucide-react'
+import { FileText, LogOut, Plus, Search, Trash2, FileDown } from 'lucide-react'
+import { exportToWord, validateForExport } from '@/lib/word-export'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/hooks/use-auth'
 import { getReports, deleteReport, ReportRecord } from '@/services/reports'
@@ -33,6 +34,15 @@ export default function Index() {
       await deleteReport(id)
       loadReports()
     }
+  }
+
+  const handleExport = (report: ReportRecord, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!validateForExport(report)) {
+      navigate(`/laudo/${report.id}/encerramento`)
+      return
+    }
+    exportToWord(report)
   }
 
   const filtered = reports.filter(
@@ -107,19 +117,29 @@ export default function Index() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <div className="flex items-center gap-2 w-full sm:w-auto mt-4 sm:mt-0">
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={(e) => handleDelete(report.id, e)}
                       className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      title="Excluir"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="ml-auto sm:ml-0"
+                      className="gap-2 ml-auto sm:ml-0"
+                      onClick={(e) => handleExport(report, e)}
+                      title="Exportar para Word"
+                    >
+                      <FileDown className="h-4 w-4" />
+                      <span className="hidden sm:inline">Exportar</span>
+                    </Button>
+                    <Button
+                      variant="default"
+                      size="sm"
                       onClick={() => navigate(`/laudo/${report.id}`)}
                     >
                       Abrir

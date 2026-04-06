@@ -3,7 +3,8 @@ import { useReport } from '@/context/ReportContext'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Save } from 'lucide-react'
+import { Save, FileDown } from 'lucide-react'
+import { exportToWord } from '@/lib/word-export'
 import { useNavigate, useParams } from 'react-router-dom'
 
 export default function Encerramento() {
@@ -16,6 +17,20 @@ export default function Encerramento() {
     await saveReport()
     toast({ title: 'Sucesso', description: 'Encerramento salvo.' })
     navigate(`/laudo/${id}/anexos`)
+  }
+
+  const handleExport = async () => {
+    // Save first to ensure latest data is exported
+    await saveReport()
+
+    // Construct a temporary report object since we might not have the full record in context
+    const reportToExport = {
+      title: data.identificacao?.sintese?.substring(0, 30) || 'Laudo_Tecnico',
+      created: new Date().toISOString(),
+      data,
+    }
+
+    exportToWord(reportToExport)
   }
 
   return (
@@ -36,8 +51,16 @@ export default function Encerramento() {
         />
       </div>
 
-      <div className="flex justify-end pt-8 mt-8 border-t">
-        <Button onClick={handleSave} className="gap-2" size="lg">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 mt-8 border-t">
+        <Button
+          variant="outline"
+          onClick={handleExport}
+          className="gap-2 w-full sm:w-auto border-blue-200 text-blue-700 hover:bg-blue-50"
+          size="lg"
+        >
+          <FileDown className="h-5 w-5" /> Exportar para Word
+        </Button>
+        <Button onClick={handleSave} className="gap-2 w-full sm:w-auto" size="lg">
           <Save className="h-4 w-4" /> Salvar e Continuar
         </Button>
       </div>
