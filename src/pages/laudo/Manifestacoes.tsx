@@ -1,18 +1,47 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useReport, Manifestacao } from '@/context/ReportContext'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Plus, Trash2, Save, Image as ImageIcon } from 'lucide-react'
+import { Plus, Trash2, Save } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { ImageUploadZone } from '@/components/laudo/ImageUploadZone'
+import { useRealtime } from '@/hooks/use-realtime'
+import pb from '@/lib/pocketbase/client'
 
 export default function Manifestacoes() {
   const { id } = useParams()
   const { data, setManifestacoes, saveReport } = useReport()
   const { toast } = useToast()
   const navigate = useNavigate()
+  const [images, setImages] = useState<Record<string, any>>({})
+
+  useEffect(() => {
+    if (!id) return
+    pb.collection('manifestation_images')
+      .getFullList({ filter: `report_id = "${id}"` })
+      .then((records) => {
+        const map: Record<string, any> = {}
+        records.forEach((r) => {
+          map[r.manifestation_id] = r
+        })
+        setImages(map)
+      })
+      .catch(console.error)
+  }, [id])
+
+  useRealtime('manifestation_images', (e) => {
+    if (e.record.report_id === id) {
+      setImages((prev) => {
+        const next = { ...prev }
+        if (e.action === 'delete') delete next[e.record.manifestation_id]
+        else next[e.record.manifestation_id] = e.record
+        return next
+      })
+    }
+  })
 
   const handleAdd = () => {
     const newItem: Manifestacao = {
@@ -32,8 +61,15 @@ export default function Manifestacoes() {
     )
   }
 
-  const handleRemove = (itemId: string) => {
+  const handleRemove = async (itemId: string) => {
     setManifestacoes(data.manifestacoes.filter((m) => m.id !== itemId))
+    if (images[itemId]) {
+      try {
+        await pb.collection('manifestation_images').delete(images[itemId].id)
+      } catch (e) {
+        console.error('Error deleting image', e)
+      }
+    }
   }
 
   const handleSave = async () => {
@@ -108,13 +144,12 @@ export default function Manifestacoes() {
               </div>
 
               <div className="ml-6 mb-4">
-                <div className="border-2 border-dashed border-slate-300 rounded-t-lg bg-slate-50 min-h-[250px] flex flex-col items-center justify-center text-slate-400 relative">
-                  <ImageIcon className="h-10 w-10 mb-2 opacity-50" />
-                  <span className="italic text-sm">[Inserir foto aqui na versão final]</span>
-                  <div className="absolute top-2 right-2 bg-white px-2 py-1 text-xs font-bold border rounded shadow-sm">
-                    Foto {index + 1}
-                  </div>
-                </div>
+                <ImageUploadZone
+                  reportId={id!}
+                  manifestationId={item.id}
+                  imageRecord={images[item.id]}
+                  index={index}
+                />
                 <div className="bg-blue-50/50 p-2 text-xs text-[#2b579a] text-center border-x border-b border-slate-300 rounded-b-lg font-medium">
                   Manifestação {index + 1} – {item.titulo || 'sem título'} –{' '}
                   {item.localizacao || 'sem localização'}

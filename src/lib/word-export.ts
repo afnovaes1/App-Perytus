@@ -1,6 +1,7 @@
 import { ReportRecord } from '@/services/reports'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
+import pb from '@/lib/pocketbase/client'
 
 const sanitize = (value: any): string => {
   if (value === null || value === undefined || value === '') return '&nbsp;'
@@ -243,12 +244,21 @@ export const validateForExport = (
   return true
 }
 
-export const exportToWord = (
-  report: ReportRecord | { title: string; created: string; data: any },
-) => {
+export const exportToWord = async (report: any) => {
   if (!validateForExport(report)) return false
 
   try {
+    let dbImages: any[] = []
+    if (report.id) {
+      try {
+        dbImages = await pb
+          .collection('manifestation_images')
+          .getFullList({ filter: `report_id="${report.id}"` })
+      } catch (err) {
+        console.error('Error fetching images', err)
+      }
+    }
+
     const data = report.data || {}
 
     const identificacao = data.identificacao || {}
@@ -275,6 +285,16 @@ export const exportToWord = (
     manifestacoes.forEach((m: any) => {
       const local = m.local || m.localizacao || 'Não especificado'
       if (!fotosPorLocal[local]) fotosPorLocal[local] = []
+
+      const mImgs = dbImages.filter((img) => img.manifestation_id === m.id)
+      mImgs.forEach((img) => {
+        const url = pb.files.getUrl(img, img.file)
+        if (url) {
+          fotosPorLocal[local].push(url)
+          totalFotos++
+        }
+      })
+
       if (Array.isArray(m.fotos) && m.fotos.length > 0) {
         m.fotos.forEach((f: string) => {
           if (f) {

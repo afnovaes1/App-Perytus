@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-06T21:20:46.787Z",
+  "generatedAt": "2026-04-07T10:57:07.975Z",
   "collections": [
     {
       "name": "users",
@@ -90,6 +90,62 @@
         }
       ],
       "indexes": []
+    },
+    {
+      "name": "manifestation_images",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && user_id = @request.auth.id",
+        "view": "@request.auth.id != '' && user_id = @request.auth.id",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != '' && user_id = @request.auth.id",
+        "delete": "@request.auth.id != '' && user_id = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "user_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "report_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "reports"
+        },
+        {
+          "name": "manifestation_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "file",
+          "type": "file",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_manifestation_images_report ON manifestation_images (report_id)"
+      ]
     }
   ]
 }
