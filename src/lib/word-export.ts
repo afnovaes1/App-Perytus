@@ -54,89 +54,6 @@ const parseGutNum = (val: any): number | null => {
   return isNaN(n) ? null : n
 }
 
-const getGutField = (m: any, field: string): any => {
-  if (!m) return undefined
-
-  const searchBase = field
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-  const searchShort = searchBase.charAt(0)
-
-  const containers = [
-    m,
-    m.gut,
-    m.matrizGut,
-    m.matriz,
-    m.matriz_gut,
-    m.classificacao,
-    m.priorizacao,
-    m.prioridade,
-    m.avaliacao,
-    m.diagnostico,
-  ]
-
-  // First pass: try to find a key that is clearly the field and holds a valid GUT number (1-5)
-  for (const container of containers) {
-    if (container && typeof container === 'object') {
-      for (const [key, value] of Object.entries(container)) {
-        if (value === undefined || value === null || value === '') continue
-
-        const k = key
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-
-        if (
-          k === searchBase ||
-          k === searchShort ||
-          k.includes(searchBase) ||
-          (k.length <= 2 && k.includes(searchShort))
-        ) {
-          const num = parseGutNum(value)
-          if (num !== null && num >= 1 && num <= 5) {
-            return value
-          }
-        }
-      }
-    }
-  }
-
-  // Second pass: relaxed check fallback
-  for (const container of containers) {
-    if (container && typeof container === 'object') {
-      for (const [key, value] of Object.entries(container)) {
-        if (value === undefined || value === null || value === '') continue
-
-        const k = key
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-        if (
-          k === searchBase ||
-          k === searchShort ||
-          k === `${searchBase}value` ||
-          k === `${searchShort}value` ||
-          k === `valor${searchBase}` ||
-          k === `valor${searchShort}` ||
-          k === `gut${searchBase}` ||
-          k === `gut_${searchBase}` ||
-          k === `gut${searchShort}` ||
-          k === `gut_${searchShort}` ||
-          k === `matriz${searchBase}` ||
-          k === `matriz_${searchBase}` ||
-          k === `matriz${searchShort}` ||
-          k === `matriz_${searchShort}`
-        ) {
-          return value
-        }
-      }
-    }
-  }
-
-  return undefined
-}
-
 const getManifestationTitle = (m: any): string => {
   if (!m || typeof m !== 'object') return 'Sem título'
 
@@ -245,6 +162,13 @@ export const validateForExport = (
 }
 
 export const exportToWord = async (report: any) => {
+  if (!pb.authStore.isValid || !pb.authStore.record) {
+    toast.error('Erro de Autenticação', {
+      description: 'Você precisa estar logado para exportar o laudo.',
+    })
+    return false
+  }
+
   if (!validateForExport(report)) return false
 
   try {
@@ -425,23 +349,19 @@ export const exportToWord = async (report: any) => {
             manifestacoes.length > 0
               ? manifestacoes
                   .map((m: any) => {
-                    const rawG = getGutField(m, 'gravidade')
-                    const rawU = getGutField(m, 'urgencia')
-                    const rawT = getGutField(m, 'tendencia')
+                    const g = parseGutNum(classificacao.matrizGUT?.gravidade)
+                    const u = parseGutNum(classificacao.matrizGUT?.urgencia)
+                    const t = parseGutNum(classificacao.matrizGUT?.tendencia)
 
-                    const g = parseGutNum(rawG)
-                    const u = parseGutNum(rawU)
-                    const t = parseGutNum(rawT)
-
-                    const result = g !== null && u !== null && t !== null ? g * u * t : '&nbsp;'
+                    const result = g !== null && u !== null && t !== null ? g * u * t : 'N/A'
                     const title = getManifestationTitle(m)
 
                     return `
                     <tr>
                       <td>${sanitize(title)}</td>
-                      <td>${g !== null ? g : '&nbsp;'}</td>
-                      <td>${u !== null ? u : '&nbsp;'}</td>
-                      <td>${t !== null ? t : '&nbsp;'}</td>
+                      <td>${g !== null ? g : 'N/A'}</td>
+                      <td>${u !== null ? u : 'N/A'}</td>
+                      <td>${t !== null ? t : 'N/A'}</td>
                       <td><strong>${result}</strong></td>
                     </tr>
                   `
