@@ -6,6 +6,13 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Plus, Trash2, Save } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ImageUploadZone } from '@/components/laudo/ImageUploadZone'
 import { useRealtime } from '@/hooks/use-realtime'
@@ -51,11 +58,14 @@ export default function Manifestacoes() {
       intensidade: '',
       evolucao: '',
       observacoes: '',
+      gravidade: '',
+      urgencia: '',
+      tendencia: '',
     }
     setManifestacoes([...data.manifestacoes, newItem])
   }
 
-  const handleUpdate = (itemId: string, field: keyof Manifestacao, value: string) => {
+  const handleUpdate = (itemId: string, field: keyof Manifestacao, value: any) => {
     setManifestacoes(
       data.manifestacoes.map((m) => (m.id === itemId ? { ...m, [field]: value } : m)),
     )
@@ -140,6 +150,79 @@ export default function Manifestacoes() {
                     onChange={(e) => handleUpdate(item.id, 'observacoes', e.target.value)}
                     className="min-h-[60px]"
                   />
+                </div>
+                <div className="grid grid-cols-[120px_1fr] items-center gap-2 mt-2">
+                  <Label className="font-semibold text-slate-700">Matriz GUT:</Label>
+                  <div className="flex flex-wrap gap-4 items-center">
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs text-muted-foreground">Gravidade (G):</Label>
+                      <Select
+                        value={item.gravidade?.toString() || ''}
+                        onValueChange={(val) =>
+                          handleUpdate(item.id, 'gravidade', parseInt(val, 10))
+                        }
+                      >
+                        <SelectTrigger className="w-[70px] h-8">
+                          <SelectValue placeholder="-" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5].map((n) => (
+                            <SelectItem key={n} value={n.toString()}>
+                              {n}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs text-muted-foreground">Urgência (U):</Label>
+                      <Select
+                        value={item.urgencia?.toString() || ''}
+                        onValueChange={(val) =>
+                          handleUpdate(item.id, 'urgencia', parseInt(val, 10))
+                        }
+                      >
+                        <SelectTrigger className="w-[70px] h-8">
+                          <SelectValue placeholder="-" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5].map((n) => (
+                            <SelectItem key={n} value={n.toString()}>
+                              {n}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs text-muted-foreground">Tendência (T):</Label>
+                      <Select
+                        value={item.tendencia?.toString() || ''}
+                        onValueChange={(val) =>
+                          handleUpdate(item.id, 'tendencia', parseInt(val, 10))
+                        }
+                      >
+                        <SelectTrigger className="w-[70px] h-8">
+                          <SelectValue placeholder="-" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5].map((n) => (
+                            <SelectItem key={n} value={n.toString()}>
+                              {n}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="ml-2 px-3 py-1 bg-slate-100 rounded text-sm font-semibold">
+                      Total:{' '}
+                      {typeof item.gravidade === 'number' &&
+                      typeof item.urgencia === 'number' &&
+                      typeof item.tendencia === 'number'
+                        ? item.gravidade * item.urgencia * item.tendencia
+                        : '-'}
+                    </div>
+                  </div>
                 </div>
               </div>
 

@@ -349,9 +349,9 @@ export const exportToWord = async (report: any) => {
             manifestacoes.length > 0
               ? manifestacoes
                   .map((m: any) => {
-                    const g = parseGutNum(classificacao.matrizGUT?.gravidade)
-                    const u = parseGutNum(classificacao.matrizGUT?.urgencia)
-                    const t = parseGutNum(classificacao.matrizGUT?.tendencia)
+                    const g = parseGutNum(m.gravidade)
+                    const u = parseGutNum(m.urgencia)
+                    const t = parseGutNum(m.tendencia)
 
                     const result = g !== null && u !== null && t !== null ? g * u * t : 'N/A'
                     const title = getManifestationTitle(m)

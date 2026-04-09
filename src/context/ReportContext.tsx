@@ -9,6 +9,9 @@ export type Manifestacao = {
   intensidade: string
   evolucao: string
   observacoes: string
+  gravidade?: number | ''
+  urgencia?: number | ''
+  tendencia?: number | ''
 }
 
 export type ReportData = {
