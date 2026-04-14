@@ -196,6 +196,7 @@ export const exportToWord = async (report: any) => {
     const encerramento = data.encerramento || {}
     const referencias = data.referencias || {}
     const anexos = data.anexos || {}
+    const matrizGUTGlobal = classificacao.matrizGUT || {}
 
     const effortTotal =
       parseNum(estimativa.compreensao) +
@@ -349,9 +350,10 @@ export const exportToWord = async (report: any) => {
             manifestacoes.length > 0
               ? manifestacoes
                   .map((m: any) => {
-                    const g = parseGutNum(m.gravidade)
-                    const u = parseGutNum(m.urgencia)
-                    const t = parseGutNum(m.tendencia)
+                    // Usa GUT da manifestação. Se não preenchido, cai back para o GUT global de Classificação.
+                    const g = parseGutNum(m.gravidade) ?? parseGutNum(matrizGUTGlobal.gravidade)
+                    const u = parseGutNum(m.urgencia) ?? parseGutNum(matrizGUTGlobal.urgencia)
+                    const t = parseGutNum(m.tendencia) ?? parseGutNum(matrizGUTGlobal.tendencia)
 
                     const result = g !== null && u !== null && t !== null ? g * u * t : 'N/A'
                     const title = getManifestationTitle(m)
