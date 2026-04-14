@@ -275,22 +275,56 @@ export const exportToWord = async (report: any) => {
       <h2>2. OBJETIVO</h2>
       <p>Este relatório tem por objetivo registrar as manifestações observadas, analisar tecnicamente as possíveis causas e apresentar diagnóstico, prognóstico e recomendações técnicas pertinentes.</p>
 
-      <h2>3. SÍNTESE DO CONTEXTO</h2>
+      <h2>3. CARACTERIZAÇÃO DO OBJETO E ENTORNO</h2>
+      <h3>3.1 Identificação do Imóvel</h3>
+      <table>
+        <tbody>
+          <tr><td class="field-label" style="width:40%">Denominação / Destinatário</td><td>${sanitize(identificacao.destinatario)}</td></tr>
+          <tr><td class="field-label">Endereço</td><td>${sanitize(identificacao.local)}</td></tr>
+          <tr><td class="field-label">Código / Referência</td><td>${sanitize(identificacao.codigo)}</td></tr>
+          <tr><td class="field-label">Data da Vistoria</td><td>${sanitize(identificacao.data)}</td></tr>
+          <tr><td class="field-label">Uso / Ocupação</td><td>[___________]</td></tr>
+          <tr><td class="field-label">Número de Pavimentos</td><td>[___________]</td></tr>
+          <tr><td class="field-label">Área Total Aproximada (m²)</td><td>[___________]</td></tr>
+          <tr><td class="field-label">Idade Estimada da Edificação</td><td>[___________]</td></tr>
+        </tbody>
+      </table>
+      <h3>3.2 Sistema Construtivo</h3>
+      <table>
+        <tbody>
+          <tr><td class="field-label" style="width:40%">Estrutura</td><td>[___________]</td></tr>
+          <tr><td class="field-label">Vedação / Alvenaria</td><td>[___________]</td></tr>
+          <tr><td class="field-label">Cobertura</td><td>[___________]</td></tr>
+          <tr><td class="field-label">Fundação (tipo conhecido)</td><td>[___________]</td></tr>
+          <tr><td class="field-label">Revestimentos</td><td>[___________]</td></tr>
+        </tbody>
+      </table>
+      <h3>3.3 Caracterização do Entorno</h3>
+      <table>
+        <tbody>
+          <tr><td class="field-label" style="width:40%">Tipo de Ocupação do Entorno</td><td>[___________]</td></tr>
+          <tr><td class="field-label">Topografia / Condições do Solo</td><td>[___________]</td></tr>
+          <tr><td class="field-label">Interferências Vizinhas Relevantes</td><td>[___________]</td></tr>
+          <tr><td class="field-label">Observações Gerais</td><td>[___________]</td></tr>
+        </tbody>
+      </table>
+
+      <h2>4. SÍNTESE DO CONTEXTO</h2>
       <p>${sanitize(identificacao.sintese)}</p>
 
-      <h2>4. METODOLOGIA</h2>
+      <h2>5. METODOLOGIA</h2>
       <p><strong>Procedimentos adotados:</strong> ${sanitize(metodologia.procedimentosAdotados)}</p>
       <p><strong>Limitações:</strong> ${sanitize(metodologia.limitacoesInvestigacao)}</p>
       <p><strong>Amplitude técnica:</strong> ${sanitize(metodologia.amplitudeTecnica)}</p>
 
-      <h2>5. EVIDÊNCIAS LEVANTADAS</h2>
+      <h2>6. EVIDÊNCIAS LEVANTADAS</h2>
       <ul>
         <li><strong>Monitoramento:</strong> ${sanitize(evidencias.monitoramento)}</li>
         <li><strong>Eventos:</strong> ${sanitize(evidencias.eventos)}</li>
         <li><strong>Evidências Associadas:</strong> ${sanitize(evidencias.associadas)}</li>
       </ul>
 
-      <h2>6. MANIFESTAÇÕES TÉCNICAS</h2>
+      <h2>7. MANIFESTAÇÕES TÉCNICAS</h2>
       ${
         manifestacoes.length > 0
           ? manifestacoes
@@ -299,14 +333,14 @@ export const exportToWord = async (report: any) => {
                 return `
         <div style="margin-bottom: 20px;">
           <h3>Manifestação ${i + 1}: ${sanitize(title)}</h3>
-          <p><strong>6.1 Descrição</strong></p>
+          <p><strong>7.1 Descrição</strong></p>
           <ul>
             <li><strong>Local:</strong> ${sanitize(m.local || m.localizacao)}</li>
             <li><strong>Elemento:</strong> ${sanitize(title)}</li>
             <li><strong>Intensidade:</strong> ${sanitize(m.intensidade)}</li>
             <li><strong>Evolução:</strong> ${sanitize(m.evolucao)}</li>
           </ul>
-          <p><strong>6.2 Caracterização</strong></p>
+          <p><strong>7.2 Caracterização</strong></p>
           <p>${sanitize(m.descricao || m.observacoes)}</p>
         </div>
       `
@@ -315,26 +349,26 @@ export const exportToWord = async (report: any) => {
           : '<p>Nenhuma manifestação registrada.</p>'
       }
 
-      <h2>7. HIPÓTESES TÉCNICAS</h2>
+      <h2>8. HIPÓTESES TÉCNICAS</h2>
       <ul>
         <li><strong>Hipótese principal:</strong> ${sanitize(hipoteses.principal?.descricao)}</li>
         <li><strong>Fatores contribuintes possíveis:</strong> ${sanitize(hipoteses.principal?.criterios)}</li>
         <li><strong>Grau de confiança:</strong> ${sanitize(hipoteses.principal?.confianca)}</li>
       </ul>
 
-      <h2>8. ANÁLISE TÉCNICA</h2>
+      <h2>9. ANÁLISE TÉCNICA</h2>
       <p>${sanitize(metodologia.alcanceInterpretativo)}</p>
 
-      <h2>9. DIAGNÓSTICO</h2>
+      <h2>10. DIAGNÓSTICO</h2>
       <p>${sanitize(consolidacao.diagnostico)}</p>
 
-      <h2>10. PROGNÓSTICO</h2>
+      <h2>11. PROGNÓSTICO</h2>
       <p>${sanitize(consolidacao.prognostico)}</p>
 
-      <h2>11. RECOMENDAÇÕES</h2>
+      <h2>12. RECOMENDAÇÕES</h2>
       <p>${sanitize(consolidacao.recomendacoes)}</p>
 
-      <h2>12. MATRIZ GUT (PRIORIZAÇÃO)</h2>
+      <h2>13. MATRIZ GUT (PRIORIZAÇÃO)</h2>
       <table class="gut-table">
         <thead>
           <tr>
@@ -374,11 +408,11 @@ export const exportToWord = async (report: any) => {
         </tbody>
       </table>
 
-      <h2>13. CLASSIFICAÇÃO TÉCNICA</h2>
+      <h2>14. CLASSIFICAÇÃO TÉCNICA</h2>
       <p><strong>Estado de desempenho:</strong> ${sanitize(classificacao.estadoDesempenho)}</p>
       <p><strong>Prioridade:</strong> ${sanitize(classificacao.prioridade)}</p>
 
-      <h2>14. ESTIMATIVA DE ESFORÇO TÉCNICO</h2>
+      <h2>15. ESTIMATIVA DE ESFORÇO TÉCNICO</h2>
       <table>
         <thead>
           <tr>
@@ -399,14 +433,14 @@ export const exportToWord = async (report: any) => {
         </tbody>
       </table>
 
-      <h2>15. LIMITAÇÕES DO ESTUDO</h2>
+      <h2>16. LIMITAÇÕES DO ESTUDO</h2>
       <ul>
         ${consolidacao.limitacoes ? `<li>${sanitize(consolidacao.limitacoes)}</li>` : ''}
         ${metodologia.lacunasMetodologicas ? `<li>${sanitize(metodologia.lacunasMetodologicas)}</li>` : ''}
         ${!consolidacao.limitacoes && !metodologia.lacunasMetodologicas ? '<li>Nenhuma limitação registrada.</li>' : ''}
       </ul>
 
-      <h2>16. DOCUMENTOS E ANEXOS</h2>
+      <h2>17. DOCUMENTOS E ANEXOS</h2>
       <p><strong>Quantidade de Fotos:</strong> ${totalFotos || sanitize(anexos.quantidadeFotos) || 0}</p>
       <p><strong>Organização:</strong> ${sanitize(anexos.organizacaoFotos)}</p>
       ${
@@ -432,7 +466,7 @@ export const exportToWord = async (report: any) => {
           : '<p>Nenhuma foto anexada.</p>'
       }
 
-      <h2>17. REFERÊNCIAS</h2>
+      <h2>18. REFERÊNCIAS</h2>
       <ul>
         <li>ABNT NBR 13752 – Perícias de engenharia</li>
         <li>ABNT NBR 16747 – Inspeção predial</li>
@@ -441,10 +475,10 @@ export const exportToWord = async (report: any) => {
       </ul>
       ${referencias.texto ? `<p>${sanitize(referencias.texto)}</p>` : ''}
 
-      <h2>18. DECLARAÇÃO DE RESPONSABILIDADE</h2>
+      <h2>19. DECLARAÇÃO DE RESPONSABILIDADE</h2>
       <p>O presente relatório foi elaborado com apoio da plataforma PERYTUS, ferramenta de organização técnica. As análises, conclusões e responsabilidade técnica são exclusivamente do profissional signatário.</p>
 
-      <h2>19. ENCERRAMENTO</h2>
+      <h2>20. ENCERRAMENTO</h2>
       <p>${sanitize(encerramento.texto)}</p>
       
     </body>
