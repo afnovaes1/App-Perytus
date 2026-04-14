@@ -20,8 +20,10 @@ export default function Classificacao() {
   const { toast } = useToast()
   const navigate = useNavigate()
 
-  const { tipo, estadoDesempenho, prioridade, matrizGUT } = data.classificacao || {}
-  const { gravidade, urgencia, tendencia } = matrizGUT || {}
+  const classificacaoData = data.classificacao || {}
+  const { tipo, estadoDesempenho, prioridade } = classificacaoData
+  const matrizGUT = classificacaoData.matrizGUT || { gravidade: 0, urgencia: 0, tendencia: 0 }
+  const { gravidade, urgencia, tendencia } = matrizGUT
 
   const handleSave = async () => {
     await saveReport()
@@ -29,7 +31,7 @@ export default function Classificacao() {
     navigate(`/laudo/${id}/referencias`)
   }
 
-  const score = (Number(gravidade) || 0) * (Number(urgencia) || 0) * (Number(tendencia) || 0)
+  const score = (Number(gravidade) || 1) * (Number(urgencia) || 1) * (Number(tendencia) || 1)
 
   let label = 'Indefinida'
   if (score > 0) {
@@ -138,11 +140,13 @@ export default function Classificacao() {
               </div>
               <Slider
                 value={[Number(gravidade) || 0]}
-                min={0}
+                min={1}
                 max={5}
                 step={1}
                 onValueChange={(v) =>
-                  updateSection('classificacao', { matrizGUT: { ...matrizGUT, gravidade: v[0] } })
+                  updateSection('classificacao', {
+                    matrizGUT: { ...classificacaoData.matrizGUT, gravidade: v[0] },
+                  })
                 }
               />
             </div>
@@ -154,11 +158,13 @@ export default function Classificacao() {
               </div>
               <Slider
                 value={[Number(urgencia) || 0]}
-                min={0}
+                min={1}
                 max={5}
                 step={1}
                 onValueChange={(v) =>
-                  updateSection('classificacao', { matrizGUT: { ...matrizGUT, urgencia: v[0] } })
+                  updateSection('classificacao', {
+                    matrizGUT: { ...classificacaoData.matrizGUT, urgencia: v[0] },
+                  })
                 }
               />
             </div>
@@ -170,11 +176,13 @@ export default function Classificacao() {
               </div>
               <Slider
                 value={[Number(tendencia) || 0]}
-                min={0}
+                min={1}
                 max={5}
                 step={1}
                 onValueChange={(v) =>
-                  updateSection('classificacao', { matrizGUT: { ...matrizGUT, tendencia: v[0] } })
+                  updateSection('classificacao', {
+                    matrizGUT: { ...classificacaoData.matrizGUT, tendencia: v[0] },
+                  })
                 }
               />
             </div>
