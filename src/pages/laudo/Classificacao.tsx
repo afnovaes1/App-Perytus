@@ -1,10 +1,5 @@
 import React from 'react'
 import { useReport } from '@/context/ReportContext'
-import { useToast } from '@/hooks/use-toast'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Save } from 'lucide-react'
-import { useNavigate, useParams } from 'react-router-dom'
 import {
   Select,
   SelectContent,
@@ -12,188 +7,78 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Slider } from '@/components/ui/slider'
+import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
+import { Save } from 'lucide-react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { useToast } from '@/hooks/use-toast'
 
 export default function Classificacao() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { data, updateSection, saveReport } = useReport()
   const { toast } = useToast()
-  const navigate = useNavigate()
-
-  const classificacaoData = data.classificacao || {}
-  const { tipo, estadoDesempenho, prioridade } = classificacaoData
-  const matrizGUT = classificacaoData.matrizGUT || { gravidade: 0, urgencia: 0, tendencia: 0 }
-  const { gravidade, urgencia, tendencia } = matrizGUT
 
   const handleSave = async () => {
     await saveReport()
-    toast({ title: 'Sucesso', description: 'Classificação salva.' })
+    toast({ title: 'Sucesso', description: 'Classificação salva com sucesso.' })
     navigate(`/laudo/${id}/referencias`)
-  }
-
-  const score = (Number(gravidade) || 1) * (Number(urgencia) || 1) * (Number(tendencia) || 1)
-
-  let label = 'Indefinida'
-  if (score > 0) {
-    if (score <= 10) label = 'Baixa'
-    else if (score <= 40) label = 'Moderada'
-    else if (score <= 75) label = 'Alta'
-    else label = 'Crítica'
   }
 
   return (
     <div className="animate-fade-in bg-white p-8 rounded-xl shadow-sm border border-border">
-      <div className="mb-6 border-b-2 border-[#2b579a] pb-2">
-        <h2 className="text-[#2b579a] font-serif font-bold text-2xl">
-          12. Classificação Metodológica
-        </h2>
-      </div>
-
-      <div className="space-y-8">
-        <div>
-          <h3 className="text-[#2b579a] font-bold text-lg mb-4">12.1 Tipo de Documento</h3>
-          <div className="max-w-md flex items-center gap-4">
-            <Label className="font-semibold whitespace-nowrap">Classificação:</Label>
-            <Select
-              value={tipo || ''}
-              onValueChange={(v) => updateSection('classificacao', { tipo: v })}
-            >
-              <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Selecione..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Observação">Observação</SelectItem>
-                <SelectItem value="Relatório">Relatório</SelectItem>
-                <SelectItem value="Laudo">Laudo</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      <h2 className="text-[#2b579a] font-serif font-bold text-2xl mb-8 border-b-2 border-[#2b579a] pb-2">
+        12. Classificação Técnica
+      </h2>
+      <div className="grid gap-6 max-w-2xl">
+        <div className="space-y-2">
+          <Label>Tipo de Classificação</Label>
+          <Select
+            value={data.classificacao.tipo}
+            onValueChange={(v) => updateSection('classificacao', { tipo: v })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Informativo">Informativo</SelectItem>
+              <SelectItem value="Inspetivo">Inspetivo</SelectItem>
+              <SelectItem value="Pericial">Pericial</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-
-        <div>
-          <h3 className="text-[#2b579a] font-bold text-lg mb-4">
-            12.2 Estado Aparente de Desempenho
-          </h3>
-          <div className="max-w-md flex items-center gap-4">
-            <Label className="font-semibold whitespace-nowrap">Classificação:</Label>
-            <Select
-              value={estadoDesempenho}
-              onValueChange={(v) => updateSection('classificacao', { estadoDesempenho: v })}
-            >
-              <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Selecione..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Classe 1 - Desempenho adequado">
-                  Classe 1 - Desempenho adequado
-                </SelectItem>
-                <SelectItem value="Classe 2 - Desempenho regular">
-                  Classe 2 - Desempenho regular
-                </SelectItem>
-                <SelectItem value="Classe 3 - Desempenho inadequado">
-                  Classe 3 - Desempenho inadequado
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="space-y-2">
+          <Label>Estado de Desempenho</Label>
+          <Select
+            value={data.classificacao.estadoDesempenho}
+            onValueChange={(v) => updateSection('classificacao', { estadoDesempenho: v })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Adequado">Adequado</SelectItem>
+              <SelectItem value="Inadequado">Inadequado</SelectItem>
+              <SelectItem value="Crítico">Crítico</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-
-        <div>
-          <h3 className="text-[#2b579a] font-bold text-lg mb-4">
-            12.3 Classificação de Prioridade (NBR 16747)
-          </h3>
-          <div className="max-w-md flex items-center gap-4">
-            <Label className="font-semibold whitespace-nowrap">Classificação:</Label>
-            <Select
-              value={prioridade}
-              onValueChange={(v) => updateSection('classificacao', { prioridade: v })}
-            >
-              <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Selecione..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Prioridade 1 - Intervenção imediata">
-                  Prioridade 1 - Intervenção imediata
-                </SelectItem>
-                <SelectItem value="Prioridade 2 - Intervenção a curto prazo">
-                  Prioridade 2 - Intervenção a curto prazo
-                </SelectItem>
-                <SelectItem value="Prioridade 3 - Intervenção a médio/longo prazo">
-                  Prioridade 3 - Intervenção a médio/longo prazo
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-[#2b579a] font-bold text-lg mb-4">
-            12.4 Matriz GUT (Gravidade × Urgência × Tendência)
-          </h3>
-
-          <div className="grid gap-6 max-w-xl pl-2 mb-6">
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <Label className="font-semibold text-slate-700">
-                  Gravidade (G): {gravidade || 0}
-                </Label>
-              </div>
-              <Slider
-                value={[Number(gravidade) || 0]}
-                min={1}
-                max={5}
-                step={1}
-                onValueChange={(v) =>
-                  updateSection('classificacao', {
-                    matrizGUT: { ...classificacaoData.matrizGUT, gravidade: v[0] },
-                  })
-                }
-              />
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <Label className="font-semibold text-slate-700">
-                  Urgência (U): {urgencia || 0}
-                </Label>
-              </div>
-              <Slider
-                value={[Number(urgencia) || 0]}
-                min={1}
-                max={5}
-                step={1}
-                onValueChange={(v) =>
-                  updateSection('classificacao', {
-                    matrizGUT: { ...classificacaoData.matrizGUT, urgencia: v[0] },
-                  })
-                }
-              />
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <Label className="font-semibold text-slate-700">
-                  Tendência (T): {tendencia || 0}
-                </Label>
-              </div>
-              <Slider
-                value={[Number(tendencia) || 0]}
-                min={1}
-                max={5}
-                step={1}
-                onValueChange={(v) =>
-                  updateSection('classificacao', {
-                    matrizGUT: { ...classificacaoData.matrizGUT, tendencia: v[0] },
-                  })
-                }
-              />
-            </div>
-          </div>
-
-          <div className="bg-slate-50 border p-4 rounded-lg flex gap-8 items-center max-w-xl">
-            <p className="font-bold text-slate-800 text-lg">
-              Índice de Importância (G × U × T): {score}
-            </p>
-            <p className="font-bold text-slate-800 text-lg">Classificação: {label}</p>
-          </div>
+        <div className="space-y-2">
+          <Label>Prioridade</Label>
+          <Select
+            value={data.classificacao.prioridade}
+            onValueChange={(v) => updateSection('classificacao', { prioridade: v })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Baixa">Baixa</SelectItem>
+              <SelectItem value="Média">Média</SelectItem>
+              <SelectItem value="Alta">Alta</SelectItem>
+              <SelectItem value="Urgente">Urgente</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

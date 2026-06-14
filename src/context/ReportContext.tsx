@@ -64,11 +64,6 @@ export type ReportData = {
     tipo: string
     estadoDesempenho: string
     prioridade: string
-    matrizGUT: {
-      gravidade: number | ''
-      urgencia: number | ''
-      tendencia: number | ''
-    }
   }
   referencias: {
     texto: string
@@ -96,7 +91,6 @@ export const defaultData: ReportData = {
     tipo: '',
     estadoDesempenho: '',
     prioridade: '',
-    matrizGUT: { gravidade: '', urgencia: '', tendencia: '' },
   },
   referencias: { texto: '', aceiteResponsabilidade: false },
 }

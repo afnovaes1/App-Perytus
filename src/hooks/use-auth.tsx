@@ -5,6 +5,8 @@ interface AuthContextType {
   user: any
   signUp: (email: string, password: string) => Promise<{ error: any }>
   signIn: (email: string, password: string) => Promise<{ error: any }>
+  requestMagicLink: (email: string) => Promise<{ data: any; error: any }>
+  verifyMagicLink: (otpId: string, token: string) => Promise<{ error: any }>
   signOut: () => void
   loading: boolean
 }
@@ -63,12 +65,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
+  const requestMagicLink = async (email: string) => {
+    try {
+      const res = await pb.collection('users').requestOTP(email)
+      return { data: res, error: null }
+    } catch (error) {
+      return { data: null, error }
+    }
+  }
+
+  const verifyMagicLink = async (otpId: string, token: string) => {
+    try {
+      await pb.collection('users').authWithOTP(otpId, token)
+      return { error: null }
+    } catch (error) {
+      return { error }
+    }
+  }
+
   const signOut = () => {
     pb.authStore.clear()
   }
 
   return (
-    <AuthContext.Provider value={{ user, signUp, signIn, signOut, loading }}>
+    <AuthContext.Provider
+      value={{ user, signUp, signIn, requestMagicLink, verifyMagicLink, signOut, loading }}
+    >
       {children}
     </AuthContext.Provider>
   )

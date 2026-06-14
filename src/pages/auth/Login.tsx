@@ -1,8 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
 import { getErrorMessage } from '@/lib/pocketbase/errors'
 import { Input } from '@/components/ui/input'
@@ -16,39 +16,89 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { FileSignature } from 'lucide-react'
+import { FileSignature, CheckCircle2 } from 'lucide-react'
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 
-const loginSchema = z.object({
+const emailSchema = z.object({
   email: z.string().email({ message: 'E-mail inválido' }),
-  password: z.string().min(8, { message: 'A senha deve ter no mínimo 8 caracteres' }),
 })
 
-type LoginFormValues = z.infer<typeof loginSchema>
+const otpSchema = z.object({
+  otp: z.string().min(6, { message: 'O código deve ter no mínimo 6 caracteres' }),
+})
 
 export default function Login() {
   const [error, setError] = useState<string | null>(null)
+  const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const { signIn } = useAuth()
-  const navigate = useNavigate()
+  const [step, setStep] = useState<'email' | 'otp'>('email')
+  const [otpId, setOtpId] = useState<string>('')
 
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
+  const { requestMagicLink, verifyMagicLink } = useAuth()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+
+  const urlOtpId = searchParams.get('otpId')
+  const urlToken = searchParams.get('token')
+  const verifyCalled = useRef(false)
+
+  useEffect(() => {
+    if (urlOtpId && urlToken && !verifyCalled.current) {
+      verifyCalled.current = true
+      setIsLoading(true)
+      verifyMagicLink(urlOtpId, urlToken).then(({ error }) => {
+        setIsLoading(false)
+        if (error) {
+          setError(getErrorMessage(error))
+          setStep('email')
+        } else {
+          navigate('/')
+        }
+      })
+    }
+  }, [urlOtpId, urlToken, navigate, verifyMagicLink])
+
+  const emailForm = useForm<z.infer<typeof emailSchema>>({
+    resolver: zodResolver(emailSchema),
+    defaultValues: { email: '' },
   })
 
-  async function onSubmit(data: LoginFormValues) {
+  const otpForm = useForm<z.infer<typeof otpSchema>>({
+    resolver: zodResolver(otpSchema),
+    defaultValues: { otp: '' },
+  })
+
+  async function onEmailSubmit(data: z.infer<typeof emailSchema>) {
     setIsLoading(true)
     setError(null)
+    setSuccessMsg(null)
 
-    const { error: signInError } = await signIn(data.email, data.password)
+    const { data: resData, error: reqError } = await requestMagicLink(data.email)
 
     setIsLoading(false)
 
-    if (signInError) {
-      setError(getErrorMessage(signInError))
+    if (reqError) {
+      setError(getErrorMessage(reqError))
+    } else if (resData?.otpId) {
+      setOtpId(resData.otpId)
+      setStep('otp')
+      setSuccessMsg('Código de acesso enviado para seu e-mail.')
+    } else {
+      setStep('otp')
+      setSuccessMsg('Código de acesso enviado para seu e-mail.')
+    }
+  }
+
+  async function onOtpSubmit(data: z.infer<typeof otpSchema>) {
+    setIsLoading(true)
+    setError(null)
+
+    const { error: verifyError } = await verifyMagicLink(otpId, data.otp)
+
+    setIsLoading(false)
+
+    if (verifyError) {
+      setError(getErrorMessage(verifyError))
     } else {
       navigate('/')
     }
@@ -64,9 +114,11 @@ export default function Login() {
                 <FileSignature className="h-10 w-10 text-primary" />
               </div>
             </div>
-            <h1 className="text-3xl font-serif font-bold tracking-tight">Bem-vindo de volta</h1>
+            <h1 className="text-3xl font-serif font-bold tracking-tight">Acesso ao Sistema</h1>
             <p className="text-muted-foreground">
-              Insira suas credenciais para acessar seus laudos
+              {step === 'email'
+                ? 'Insira seu e-mail para receber um link de acesso seguro'
+                : 'Insira o código de 6 dígitos enviado para seu e-mail'}
             </p>
           </div>
 
@@ -76,41 +128,77 @@ export default function Login() {
             </Alert>
           )}
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>E-mail</FormLabel>
-                    <FormControl>
-                      <Input placeholder="seu@email.com.br" type="email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex items-center justify-between">
-                      <FormLabel>Senha</FormLabel>
-                    </div>
-                    <FormControl>
-                      <Input placeholder="••••••••" type="password" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Entrando...' : 'Entrar'}
-              </Button>
-            </form>
-          </Form>
+          {successMsg && (
+            <Alert className="bg-green-50 text-green-700 border-green-200">
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <AlertDescription>{successMsg}</AlertDescription>
+            </Alert>
+          )}
+
+          {step === 'email' ? (
+            <Form {...emailForm}>
+              <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-4">
+                <FormField
+                  control={emailForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>E-mail</FormLabel>
+                      <FormControl>
+                        <Input placeholder="seu@email.com.br" type="email" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Enviando...' : 'Enviar Link de Acesso'}
+                </Button>
+              </form>
+            </Form>
+          ) : (
+            <Form {...otpForm}>
+              <form onSubmit={otpForm.handleSubmit(onOtpSubmit)} className="space-y-4">
+                <FormField
+                  control={otpForm.control}
+                  name="otp"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col items-center justify-center">
+                      <FormLabel>Código de Acesso</FormLabel>
+                      <FormControl>
+                        <InputOTP maxLength={6} {...field}>
+                          <InputOTPGroup>
+                            <InputOTPSlot index={0} />
+                            <InputOTPSlot index={1} />
+                            <InputOTPSlot index={2} />
+                            <InputOTPSlot index={3} />
+                            <InputOTPSlot index={4} />
+                            <InputOTPSlot index={5} />
+                          </InputOTPGroup>
+                        </InputOTP>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Verificando...' : 'Entrar'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  type="button"
+                  className="w-full"
+                  onClick={() => {
+                    setStep('email')
+                    setSuccessMsg(null)
+                  }}
+                  disabled={isLoading}
+                >
+                  Voltar
+                </Button>
+              </form>
+            </Form>
+          )}
 
           <div className="text-center text-sm text-muted-foreground">
             Não tem uma conta?{' '}
