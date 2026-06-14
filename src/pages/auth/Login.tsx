@@ -34,9 +34,15 @@ export default function Login() {
   const [step, setStep] = useState<'email' | 'otp'>('email')
   const [otpId, setOtpId] = useState<string>('')
 
-  const { requestMagicLink, verifyMagicLink } = useAuth()
+  const { requestMagicLink, verifyMagicLink, isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/', { replace: true })
+    }
+  }, [isAuthenticated, navigate])
 
   const urlOtpId = searchParams.get('otpId')
   const urlToken = searchParams.get('token')

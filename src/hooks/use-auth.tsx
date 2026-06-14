@@ -3,11 +3,12 @@ import pb from '@/lib/pocketbase/client'
 
 interface AuthContextType {
   user: any
+  isAuthenticated: boolean
   signUp: (email: string, password: string) => Promise<{ error: any }>
   signIn: (email: string, password: string) => Promise<{ error: any }>
-  requestMagicLink: (email: string) => Promise<{ data: any; error: any }>
-  verifyMagicLink: (otpId: string, token: string) => Promise<{ error: any }>
   signOut: () => void
+  requestMagicLink: (email: string) => Promise<{ data: any; error: any }>
+  verifyMagicLink: (otpId: string, otpCode: string) => Promise<{ error: any }>
   loading: boolean
 }
 
@@ -20,27 +21,25 @@ export const useAuth = () => {
 }
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<any>(pb.authStore.record)
-  const [loading, setLoading] = useState(pb.authStore.isValid)
+  const [user, setUser] = useState<any>(pb.authStore.isValid ? pb.authStore.record : null)
+  const [isAuthenticated, setIsAuthenticated] = useState(pb.authStore.isValid)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const initAuth = async () => {
-      if (pb.authStore.isValid) {
-        try {
-          await pb.collection('users').authRefresh()
-        } catch (error) {
-          pb.authStore.clear()
-        }
-      }
-      setLoading(false)
-    }
-
-    initAuth()
-
     const unsubscribe = pb.authStore.onChange((_token, record) => {
-      setUser(record)
+      setUser(pb.authStore.isValid ? record : null)
+      setIsAuthenticated(pb.authStore.isValid)
     })
 
+    if (pb.authStore.isValid) {
+      pb.collection('users')
+        .authRefresh()
+        .catch(() => pb.authStore.clear())
+        .finally(() => setLoading(false))
+    } else {
+      if (pb.authStore.record) pb.authStore.clear()
+      setLoading(false)
+    }
     return () => {
       unsubscribe()
     }
@@ -67,16 +66,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const requestMagicLink = async (email: string) => {
     try {
-      const res = await pb.collection('users').requestOTP(email)
-      return { data: res, error: null }
+      const data = await pb.collection('users').requestOTP(email)
+      return { data, error: null }
     } catch (error) {
       return { data: null, error }
     }
   }
 
-  const verifyMagicLink = async (otpId: string, token: string) => {
+  const verifyMagicLink = async (otpId: string, otpCode: string) => {
     try {
-      await pb.collection('users').authWithOTP(otpId, token)
+      await pb.collection('users').authWithOTP(otpId, otpCode)
       return { error: null }
     } catch (error) {
       return { error }
@@ -89,7 +88,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, signUp, signIn, requestMagicLink, verifyMagicLink, signOut, loading }}
+      value={{
+        user,
+        isAuthenticated,
+        signUp,
+        signIn,
+        signOut,
+        requestMagicLink,
+        verifyMagicLink,
+        loading,
+      }}
     >
       {children}
     </AuthContext.Provider>
