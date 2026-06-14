@@ -2,16 +2,14 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { FileText, LogOut, Plus, Search, Trash2, FileDown } from 'lucide-react'
+import { FileText, Plus, Search, Trash2, FileDown } from 'lucide-react'
 import { exportToWord, validateForExport } from '@/lib/word-export'
 import { Input } from '@/components/ui/input'
-import { useAuth } from '@/hooks/use-auth'
 import { getReports, deleteReport, ReportRecord } from '@/services/reports'
 import { format } from 'date-fns'
 
 export default function Index() {
   const navigate = useNavigate()
-  const { signOut } = useAuth()
   const [reports, setReports] = useState<ReportRecord[]>([])
   const [search, setSearch] = useState('')
 
@@ -21,11 +19,6 @@ export default function Index() {
 
   const loadReports = () => {
     getReports().then(setReports).catch(console.error)
-  }
-
-  const handleLogout = () => {
-    signOut()
-    navigate('/login')
   }
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
@@ -61,9 +54,6 @@ export default function Index() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="lg" className="gap-2" onClick={handleLogout}>
-            <LogOut className="h-5 w-5" /> Sair
-          </Button>
           <Button
             size="lg"
             className="gap-2 shadow-elevation"

@@ -1,17 +1,13 @@
 import React, { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '@/hooks/use-auth'
 import { createReport } from '@/services/reports'
 import { defaultData } from '@/context/ReportContext'
 
 export default function NewReportRedirect() {
   const navigate = useNavigate()
-  const { user } = useAuth()
 
   useEffect(() => {
-    if (!user) return
     createReport({
-      user_id: user.id,
       title: 'Novo Laudo Técnico',
       data: defaultData,
     })
@@ -22,7 +18,7 @@ export default function NewReportRedirect() {
         console.error(err)
         navigate('/')
       })
-  }, [user, navigate])
+  }, [navigate])
 
   return (
     <div className="flex h-[60vh] items-center justify-center flex-col gap-4">
